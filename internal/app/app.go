@@ -80,11 +80,27 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("message text: %s", update.Message.Text)
 
-	answer, err := a.sockets[0].Write(update.Message.Text)
-	if err != nil {
-		log.Printf("write: %s", err.Error())
-		return
-	}
+	text := update.Message.Text
+	if text == "/temperature" {
+		answer, err := a.sockets[0].Write("1")
+		if err != nil {
+			log.Printf("write: %s", err.Error())
+			return
+		}
 
-	log.Printf("arduino answer: %s", answer)
+		message := tgapi.NewMessage(update.Message.Chat.ID, answer)
+
+		_, err = a.botAPI.Send(message)
+		if err != nil {
+			log.Printf("send message: %s", err.Error())
+		}
+	} else {
+		answer, err := a.sockets[0].Write(update.Message.Text)
+		if err != nil {
+			log.Printf("write: %s", err.Error())
+			return
+		}
+
+		log.Printf("arduino answer: %s", answer)
+	}
 }
