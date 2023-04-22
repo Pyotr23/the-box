@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/Pyotr23/the-box/internal/hardware/rfcomm"
+	"github.com/Pyotr23/the-box/internal/model/enum"
+
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang.ngrok.com/ngrok"
 )
@@ -78,11 +80,13 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("message text: %s", update.Message.Text)
+	text := update.Message.Text
+	log.Printf("message text: %s", text)
 
-	switch update.Message.Text {
-	case "/temperature":
-		answer, err := a.sockets[0].Write(byte(1))
+	code := enum.GetCode(text)
+	switch code {
+	case enum.TemperatureCode:
+		answer, err := a.sockets[0].Query(code)
 		if err != nil {
 			log.Printf("write: %s", err.Error())
 			return
@@ -94,17 +98,19 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("send message: %s", err.Error())
 		}
-	case "/on":
-		err := a.sockets[0].WriteOnly(byte(2))
+	case enum.RelayOnCode:
+		err := a.sockets[0].Command(code)
 		if err != nil {
 			log.Printf("write: %s", err.Error())
 			return
 		}
-	case "/off":
-		err := a.sockets[0].WriteOnly(byte(3))
+	case enum.RelayOffCode:
+		err := a.sockets[0].Command(code)
 		if err != nil {
 			log.Printf("write: %s", err.Error())
 			return
 		}
+	case enum.UnknownCode:
+		log.Printf("no code for command '%s'", text)
 	}
 }

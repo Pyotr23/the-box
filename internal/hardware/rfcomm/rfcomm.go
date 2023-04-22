@@ -7,6 +7,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/Pyotr23/the-box/internal/model/enum"
 	"golang.org/x/sys/unix"
 )
 
@@ -46,8 +47,8 @@ func (s Socket) Close() error {
 
 }
 
-func (s Socket) Write(b byte) (string, error) {
-	if err := s.WriteOnly(b); err != nil {
+func (s Socket) Query(b enum.Code) (string, error) {
+	if err := s.Command(b); err != nil {
 		return "", fmt.Errorf("write only: %w", err)
 	}
 
@@ -59,8 +60,8 @@ func (s Socket) Write(b byte) (string, error) {
 	return string(answer), nil
 }
 
-func (s Socket) WriteOnly(b byte) error {
-	if err := s.write([]byte{b}); err != nil {
+func (s Socket) Command(b enum.Code) error {
+	if err := s.write([]byte{byte(b)}); err != nil {
 		return fmt.Errorf("write: %w", err)
 	}
 
