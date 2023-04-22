@@ -6,6 +6,9 @@ DHT dht(DHTPIN, DHT11);
 
 const int LED = 13;
 
+const byte SUCCESS = 1;
+const byte ERROR = 0;
+
 Command command;
 float t;   
 char buffer[5];    
@@ -25,22 +28,36 @@ void loop() {
   switch (IntToCommand(Serial.read())) {
     case RELAY_OFF: 
       digitalWrite(LED, LOW);
-      Serial.write("diode off");
+      sendSuccess();
       return;
     case RELAY_ON:
       digitalWrite(LED, HIGH);
-      Serial.write("diode one");
+      sendSuccess();
       return;
     case TEMPERATURE:
       t = dht.readTemperature();
       if (isnan(t)) {
-        Serial.write("read temperature error");
+        writeErrorMsg("read temperature error");
       } else {
-        Serial.write(dtostrf(t, 4, 1, buffer));
+       writeSuccessMsg(dtostrf(t, 4, 1, buffer));
       }
       return;
     case UNKNOWN:
-      Serial.write(CommandToInt(UNKNOWN));
+      writeErrorMsg("unknown command");
       return;      
   }  
+}
+
+void sendSuccess() {
+  Serial.write(SUCCESS);
+}
+
+void writeSuccessMsg(char msg[]) {
+   sendSuccess();
+   Serial.write(msg);
+}
+
+void writeErrorMsg(char msg[]) {
+   Serial.write(ERROR);
+   Serial.write(msg);
 }

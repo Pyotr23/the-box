@@ -1,6 +1,7 @@
 package rfcomm
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,7 +10,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const responseLength = 64
+const (
+	defaultSize = 64
+	errorByte   = byte(0)
+)
 
 type Socket struct {
 	fd int
@@ -42,29 +46,61 @@ func (s Socket) Close() error {
 
 }
 
-func (s Socket) Write(text string) (string, error) {
-	err := s.write(text)
-	if err != nil {
-		return "", fmt.Errorf("write to socket: %w", err)
+func (s Socket) Write(b byte) (string, error) {
+	if err := s.WriteOnly(b); err != nil {
+		return "", fmt.Errorf("write only: %w", err)
 	}
 
-	answer, err := s.read()
+	answer, err := s.read(defaultSize)
 	if err != nil {
-		return "", fmt.Errorf("read from socket: %w", err)
+		return "", fmt.Errorf("read: %w", err)
 	}
 
-	return answer, nil
+	return string(answer), nil
 }
 
-func (s Socket) write(data string) error {
-	_, err := unix.Write(s.fd, []byte(data))
+func (s Socket) WriteOnly(b byte) error {
+	if err := s.write([]byte{b}); err != nil {
+		return fmt.Errorf("write: %w", err)
+	}
+
+	if err := s.readError(); err != nil {
+		return fmt.Errorf("read error: %w", err)
+	}
+
+	return nil
+}
+
+func (s Socket) write(data []byte) error {
+	_, err := unix.Write(s.fd, data)
 	return err
 }
 
-func (s Socket) read() (string, error) {
-	answer := make([]byte, responseLength)
+func (s Socket) readError() error {
+	successBytes, err := s.read(1)
+	if err != nil {
+		return fmt.Errorf("read: %w", err)
+	}
+
+	if len(successBytes) == 0 {
+		return errors.New("no success bytes")
+	}
+
+	if successBytes[0] == errorByte {
+		msg, err := s.read(defaultSize)
+		if err != nil {
+			return fmt.Errorf("read error message: %w", err)
+		}
+		return errors.New(string(msg))
+	}
+
+	return nil
+}
+
+func (s Socket) read(size int) ([]byte, error) {
+	answer := make([]byte, size)
 	_, err := unix.Read(s.fd, answer)
-	return string(answer), err
+	return answer, err
 }
 
 // littleEndian converts MAC address string representation to little-endian byte array.

@@ -80,9 +80,9 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("message text: %s", update.Message.Text)
 
-	text := update.Message.Text
-	if text == "/temperature" {
-		answer, err := a.sockets[0].Write("1")
+	switch update.Message.Text {
+	case "/temperature":
+		answer, err := a.sockets[0].Write(byte(1))
 		if err != nil {
 			log.Printf("write: %s", err.Error())
 			return
@@ -94,13 +94,17 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("send message: %s", err.Error())
 		}
-	} else {
-		answer, err := a.sockets[0].Write(update.Message.Text)
+	case "/on":
+		err := a.sockets[0].WriteOnly(byte(2))
 		if err != nil {
 			log.Printf("write: %s", err.Error())
 			return
 		}
-
-		log.Printf("arduino answer: %s", answer)
+	case "/off":
+		err := a.sockets[0].WriteOnly(byte(3))
+		if err != nil {
+			log.Printf("write: %s", err.Error())
+			return
+		}
 	}
 }
