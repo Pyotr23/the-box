@@ -5,9 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Pyotr23/the-box/internal/cqrs"
 	"github.com/Pyotr23/the-box/internal/hardware/rfcomm"
-	"github.com/Pyotr23/the-box/internal/model/enum"
-
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang.ngrok.com/ngrok"
 )
@@ -80,37 +79,5 @@ func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	text := update.Message.Text
-	log.Printf("message text: %s", text)
-
-	code := enum.GetCode(text)
-	switch code {
-	case enum.TemperatureCode:
-		answer, err := a.sockets[0].Query(code)
-		if err != nil {
-			log.Printf("write: %s", err.Error())
-			return
-		}
-
-		message := tgapi.NewMessage(update.Message.Chat.ID, answer)
-
-		_, err = a.botAPI.Send(message)
-		if err != nil {
-			log.Printf("send message: %s", err.Error())
-		}
-	case enum.RelayOnCode:
-		err := a.sockets[0].Command(code)
-		if err != nil {
-			log.Printf("write: %s", err.Error())
-			return
-		}
-	case enum.RelayOffCode:
-		err := a.sockets[0].Command(code)
-		if err != nil {
-			log.Printf("write: %s", err.Error())
-			return
-		}
-	case enum.UnknownCode:
-		log.Printf("no code for command '%s'", text)
-	}
+	cqrs.Process(update, a.sockets[0], a.botAPI)
 }
