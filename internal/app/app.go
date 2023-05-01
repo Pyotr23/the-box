@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Pyotr23/the-box/internal/cqrs"
 	"github.com/Pyotr23/the-box/internal/hardware/rfcomm"
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang.ngrok.com/ngrok"
@@ -28,6 +27,7 @@ type App struct {
 	tunnel         ngrok.Tunnel
 	botAPI         *tgapi.BotAPI
 	sockets        []rfcomm.Socket
+	updateHandler  *updateHandler
 	shutdownStart  chan struct{}
 	shutdownFinish chan struct{}
 }
@@ -43,7 +43,7 @@ func NewApp(ctx context.Context) (Runner, error) {
 
 func (a *App) Run(ctx context.Context) error {
 	log.Println("run app")
-	err := http.Serve(a.tunnel, http.HandlerFunc(a.updateHandler))
+	err := http.Serve(a.tunnel, http.HandlerFunc(a.handleUpdate))
 	if _, opened := <-a.shutdownStart; opened {
 		return err
 	}
@@ -58,6 +58,7 @@ func (a *App) init(ctx context.Context) error {
 		&webhook{},
 		&bot{},
 		&bluetooth{},
+		&updateHandler{},
 		&gracefulShutdown{},
 	}
 
@@ -72,12 +73,12 @@ func (a *App) init(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) updateHandler(w http.ResponseWriter, r *http.Request) {
+func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request) {
 	update, err := a.botAPI.HandleUpdate(r)
 	if err != nil {
 		log.Printf("handle update: %s", err.Error())
 		return
 	}
 
-	cqrs.Process(update, a.sockets[0], a.botAPI)
+	a.updateHandler.handle(update, a.sockets[0])
 }

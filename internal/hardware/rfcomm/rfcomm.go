@@ -72,6 +72,22 @@ func (s Socket) Command(b enum.Code) error {
 	return nil
 }
 
+func (s Socket) SendText(b enum.Code, bs []byte) error {
+	if err := s.write([]byte{byte(b)}); err != nil {
+		return fmt.Errorf("write code: %w", err)
+	}
+
+	if err := s.write(bs); err != nil {
+		return fmt.Errorf("write text: %w", err)
+	}
+
+	if err := s.readError(); err != nil {
+		return fmt.Errorf("read error: %w", err)
+	}
+
+	return nil
+}
+
 func (s Socket) write(data []byte) error {
 	_, err := unix.Write(s.fd, data)
 	return err
