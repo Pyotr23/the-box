@@ -27,7 +27,7 @@ type App struct {
 	tunnel         ngrok.Tunnel
 	botAPI         *tgapi.BotAPI
 	sockets        []rfcomm.Socket
-	updateHandler  *updateHandler
+	messageHandler *messageHandler
 	shutdownStart  chan struct{}
 	shutdownFinish chan struct{}
 }
@@ -58,7 +58,7 @@ func (a *App) init(ctx context.Context) error {
 		&webhook{},
 		&bot{},
 		&bluetooth{},
-		&updateHandler{},
+		&messageHandler{},
 		&gracefulShutdown{},
 	}
 
@@ -80,5 +80,5 @@ func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.updateHandler.handle(update, a.sockets[0])
+	a.messageHandler.handle(update)
 }

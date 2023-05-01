@@ -2,7 +2,6 @@ package query
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/Pyotr23/the-box/internal/hardware/rfcomm"
 	"github.com/Pyotr23/the-box/internal/model"
@@ -15,6 +14,7 @@ type QueryHandler struct {
 	socket rfcomm.Socket
 	botAPI *tgapi.BotAPI
 	chatID int64
+	errCh  chan<- model.ErrorChatID
 }
 
 func NewQueryHandler(c model.Command) QueryHandler {
@@ -23,20 +23,32 @@ func NewQueryHandler(c model.Command) QueryHandler {
 		socket: c.Socket,
 		botAPI: c.BotAPI,
 		chatID: c.ChatID,
+		errCh:  c.ErrorCh,
 	}
 }
 
 func (h QueryHandler) Handle() {
+	var err error
+	defer func() {
+		if err != nil {
+			h.errCh <- model.ErrorChatID{
+				Err:    fmt.Errorf("query handle: %w", err),
+				ChatID: h.chatID,
+			}
+		}
+	}()
+
 	answer, err := h.socket.Query(h.code)
 	if err != nil {
-		answer = fmt.Sprintf("query: %s", err.Error())
-		log.Println(answer)
+		err = fmt.Errorf("query: %w", err)
+		return
 	}
 
 	message := tgapi.NewMessage(h.chatID, answer)
 
 	_, err = h.botAPI.Send(message)
 	if err != nil {
-		log.Printf("send: %s\n", err.Error())
+		err = fmt.Errorf("send: %w", err)
+		return
 	}
 }

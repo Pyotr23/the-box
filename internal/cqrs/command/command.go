@@ -2,7 +2,7 @@ package command
 
 import (
 	"fmt"
-	"log"
+	"strconv"
 
 	"github.com/Pyotr23/the-box/internal/hardware/rfcomm"
 	"github.com/Pyotr23/the-box/internal/model"
@@ -15,6 +15,7 @@ type CommandHandler struct {
 	socket rfcomm.Socket
 	botAPI *tgapi.BotAPI
 	chatID int64
+	errCh  chan model.ErrorChatID
 }
 
 func NewCommandHandler(c model.Command) CommandHandler {
@@ -23,63 +24,66 @@ func NewCommandHandler(c model.Command) CommandHandler {
 		socket: c.Socket,
 		botAPI: c.BotAPI,
 		chatID: c.ChatID,
+		errCh:  c.ErrorCh,
 	}
 }
 
 func (h CommandHandler) Handle() {
 	err := h.socket.Command(h.code)
-	if err == nil {
-		return
-	}
-
-	errMsg := fmt.Sprintf("query: %s", err.Error())
-	log.Println(errMsg)
-
-	message := tgapi.NewMessage(h.chatID, errMsg)
-
-	_, err = h.botAPI.Send(message)
-	if err != nil {
-		log.Printf("send: %s\n", err.Error())
-	}
+	go func() {
+		h.errCh <- model.ErrorChatID{
+			Err:    fmt.Errorf("command handle: %w", err),
+			ChatID: h.chatID,
+		}
+	}()
 }
 
 type CallbackCommandHandler struct {
-	code    enum.Code
-	socket  rfcomm.Socket
-	botAPI  *tgapi.BotAPI
-	chatID  int64
-	inputCh <-chan byte
+	code        enum.Code
+	socket      rfcomm.Socket
+	botAPI      *tgapi.BotAPI
+	chatID      int64
+	inputCh     <-chan string
+	errCh       chan<- model.ErrorChatID
+	waitInputCh chan struct{}
 }
 
-func NewCallbackCommandHandler(c model.Command, inputCh <-chan byte) CallbackCommandHandler {
+func NewCallbackCommandHandler(c model.Command, inputCh <-chan string, waitInputCh chan struct{}) CallbackCommandHandler {
 	return CallbackCommandHandler{
-		code:    c.Code,
-		socket:  c.Socket,
-		botAPI:  c.BotAPI,
-		chatID:  c.ChatID,
-		inputCh: inputCh,
+		code:        c.Code,
+		socket:      c.Socket,
+		botAPI:      c.BotAPI,
+		chatID:      c.ChatID,
+		inputCh:     inputCh,
+		waitInputCh: waitInputCh,
+		errCh:       c.ErrorCh,
 	}
 }
 
 func (h CallbackCommandHandler) Handle() {
 	go func() {
-		log.Println("callback handle")
-		input := <-h.inputCh
-		log.Println("callback handle")
-		err := h.socket.SendText(h.code, []byte{input})
-		if err == nil {
-			log.Printf("send text %d\n", input)
+		var err error
+		defer func() {
+			if err != nil {
+				h.errCh <- model.ErrorChatID{
+					Err:    fmt.Errorf("callback command handle: %w", err),
+					ChatID: h.chatID,
+				}
+			}
+		}()
+
+		h.waitInputCh <- struct{}{}
+
+		n, err := strconv.ParseUint(<-h.inputCh, 10, 8)
+		if err != nil {
+			err = fmt.Errorf("parse uint: %w", err)
 			return
 		}
 
-		errMsg := fmt.Sprintf("query: %s", err.Error())
-		log.Println(errMsg)
-
-		message := tgapi.NewMessage(h.chatID, errMsg)
-
-		_, err = h.botAPI.Send(message)
+		err = h.socket.SendText(h.code, []byte{byte(n)})
 		if err != nil {
-			log.Printf("send: %s\n", err.Error())
+			err = fmt.Errorf("send text %d: %w", byte(n), err)
+			return
 		}
 	}()
 }

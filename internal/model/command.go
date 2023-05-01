@@ -7,8 +7,14 @@ import (
 )
 
 type Command struct {
-	Code   enum.Code
-	Socket rfcomm.Socket
-	BotAPI *tgbotapi.BotAPI
+	Code    enum.Code
+	Socket  rfcomm.Socket
+	BotAPI  *tgbotapi.BotAPI
+	ChatID  int64
+	ErrorCh chan ErrorChatID
+}
+
+type ErrorChatID struct {
+	Err    error
 	ChatID int64
 }
