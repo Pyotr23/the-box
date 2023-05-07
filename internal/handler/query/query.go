@@ -10,20 +10,16 @@ import (
 )
 
 type QueryHandler struct {
-	base         base.BaseHandler
-	code         enum.Code
-	socket       rfcomm.Socket
-	chatID       int64
-	outputTextCh chan<- model.TextChatID
+	base   base.BaseHandler
+	code   enum.Code
+	socket rfcomm.Socket
 }
 
 func NewQueryHandler(c model.Command) QueryHandler {
 	return QueryHandler{
-		base:         base.NewBaseHandler(c.ChatID, c.OutputTextCh),
-		code:         c.Code,
-		socket:       c.Socket,
-		chatID:       c.ChatID,
-		outputTextCh: c.OutputTextCh,
+		base:   base.NewBaseHandler(c.ChatID, c.OutputTextCh),
+		code:   c.Code,
+		socket: c.Socket,
 	}
 }
 
@@ -41,8 +37,5 @@ func (h QueryHandler) Handle() {
 		return
 	}
 
-	h.outputTextCh <- model.TextChatID{
-		Text:   answer,
-		ChatID: h.chatID,
-	}
+	h.base.SendText(answer)
 }

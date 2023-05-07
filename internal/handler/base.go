@@ -26,3 +26,10 @@ func (h BaseHandler) ProcessError(err error) {
 		ChatID: h.chatID,
 	}
 }
+
+func (h BaseHandler) SendText(text string) {
+	h.outputTextCh <- model.TextChatID{
+		Text:   text,
+		ChatID: h.chatID,
+	}
+}
