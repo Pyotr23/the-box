@@ -8,15 +8,21 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/Pyotr23/the-box/internal/model"
 )
 
 const setWebhookFormat = "https://api.telegram.org/bot%s/setWebhook?url=%s/api/v1/update"
 
-type webhook struct {
-	description string
-}
+type (
+	webhook struct {
+		description string
+	}
+
+	webhookResp struct {
+		Ok          bool   `json:"ok"`
+		Result      bool   `json:"result"`
+		Description string `json:"description"`
+	}
+)
 
 func (w *webhook) Init(ctx context.Context, a *App) error {
 	token := os.Getenv(botTokenEnv)
@@ -30,7 +36,7 @@ func (w *webhook) Init(ctx context.Context, a *App) error {
 		return fmt.Errorf("set webhook: %w", err)
 	}
 
-	var wr model.WebhookResp
+	var wr webhookResp
 	err = json.NewDecoder(resp.Body).Decode(&wr)
 	if err != nil {
 		return fmt.Errorf("decode webhook response: %w", err)

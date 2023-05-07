@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	hardware "github.com/Pyotr23/the-box/internal/hardware/bluetooth"
-	"github.com/Pyotr23/the-box/internal/hardware/rfcomm"
+	hardware "github.com/Pyotr23/the-box/internal/bluetooth"
+	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
 type bluetooth struct{}

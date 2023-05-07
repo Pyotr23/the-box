@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Pyotr23/the-box/internal/hardware/rfcomm"
+	"github.com/Pyotr23/the-box/internal/rfcomm"
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang.ngrok.com/ngrok"
 )
