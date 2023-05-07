@@ -1,8 +1,11 @@
 package command
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/Pyotr23/the-box/internal/enum"
 	base "github.com/Pyotr23/the-box/internal/handler"
@@ -58,9 +61,24 @@ func (c CallbackCommand) Handle() {
 			}
 		}()
 
-		c.waitInputCh <- struct{}{}
+		go func() {
+			c.waitInputCh <- struct{}{}
+		}()
 
-		n, err := strconv.ParseUint(<-c.inputCh, 10, 8)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var input string
+		select {
+		case input = <-c.inputCh:
+			break
+		case <-ctx.Done():
+			<-c.waitInputCh
+			err = errors.New("too long answer waiting")
+			return
+		}
+
+		n, err := strconv.ParseUint(input, 10, 8)
 		if err != nil {
 			err = fmt.Errorf("parse uint: %w", err)
 			return
