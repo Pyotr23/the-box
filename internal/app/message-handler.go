@@ -54,7 +54,7 @@ func (h *messageHandler) handle(update *tgbotapi.Update) {
 	case enum.RelayOffCode:
 		handler = command.NewCommand(c)
 	case enum.SetIDCode:
-		handler = command.NewCallbackCommand(c, h.inputCh, h.waitInputCh)
+		handler = command.NewSetIDCallbackCommand(c, h.inputCh, h.waitInputCh)
 	case enum.GetIDCode:
 		handler = query.NewQueryHandler(c)
 	case enum.UnknownCode:
