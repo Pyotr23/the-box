@@ -9,8 +9,18 @@ import (
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+const botName = "bot"
+
 type bot struct {
 	username string
+}
+
+func newBot() *bot {
+	return &bot{}
+}
+
+func (*bot) Name() string {
+	return botName
 }
 
 func (b *bot) Init(ctx context.Context, a *App) error {
@@ -32,4 +42,13 @@ func (b *bot) Init(ctx context.Context, a *App) error {
 
 func (b *bot) SuccessLog() {
 	log.Printf("authorized on account %s\n", b.username)
+}
+
+func (*bot) Close(ctx context.Context, a *App) error {
+	a.botAPI.StopReceivingUpdates()
+	return nil
+}
+
+func (*bot) CloseLog() {
+	closeLog(botName)
 }

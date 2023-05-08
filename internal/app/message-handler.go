@@ -14,7 +14,10 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type messageHandler struct {
+const updateHandlerName = "update handler"
+
+type updateHandler struct {
+	updateCh     chan *tgbotapi.Update
 	inputCh      chan string
 	outputTextCh chan model.TextChatID
 	waitInputCh  chan struct{}
@@ -25,7 +28,59 @@ type botCommandHandler interface {
 	Handle()
 }
 
-func (h *messageHandler) handle(update *tgbotapi.Update) {
+func newUpdateHandler() *updateHandler {
+	return &updateHandler{
+		updateCh:     make(chan *tgbotapi.Update),
+		inputCh:      make(chan string),
+		outputTextCh: make(chan model.TextChatID),
+		waitInputCh:  make(chan struct{}),
+	}
+}
+
+func (*updateHandler) Name() string {
+	return updateHandlerName
+}
+
+func (h *updateHandler) Init(ctx context.Context, a *App) error {
+	a.updateCh = h.updateCh
+	h.socket = a.sockets[0]
+
+	go func() {
+		for update := range h.updateCh {
+			h.handle(update)
+		}
+	}()
+
+	go func() {
+		for tid := range h.outputTextCh {
+			message := tgbotapi.NewMessage(tid.ChatID, tid.Text)
+			_, err := a.botAPI.Send(message)
+			if err != nil {
+				log.Printf("send fail: %s\n", err.Error())
+			}
+		}
+	}()
+
+	return nil
+}
+
+func (*updateHandler) SuccessLog() {
+	log.Println("setup update handler")
+}
+
+func (h *updateHandler) Close(ctx context.Context, a *App) error {
+	close(h.updateCh)
+	close(h.outputTextCh)
+	close(h.inputCh)
+	close(h.waitInputCh)
+	return nil
+}
+
+func (*updateHandler) CloseLog() {
+	closeLog(updateHandlerName)
+}
+
+func (h *updateHandler) handle(update *tgbotapi.Update) {
 	if err := validate(update); err != nil {
 		log.Printf("not valid update: %s", err.Error())
 		return
@@ -68,7 +123,7 @@ func (h *messageHandler) handle(update *tgbotapi.Update) {
 	handler.Handle()
 }
 
-func (h *messageHandler) createCommand(msg *tgbotapi.Message) model.Command {
+func (h *updateHandler) createCommand(msg *tgbotapi.Message) model.Command {
 	return model.Command{
 		Code:         enum.GetCode(msg.Text),
 		Socket:       h.socket,
@@ -88,31 +143,4 @@ func validate(update *tgbotapi.Update) error {
 		return errors.New("empty message")
 	}
 	return nil
-}
-
-func (h *messageHandler) Init(ctx context.Context, a *App) error {
-	h = &messageHandler{
-		inputCh:      make(chan string),
-		outputTextCh: make(chan model.TextChatID),
-		waitInputCh:  make(chan struct{}),
-		socket:       a.sockets[0],
-	}
-
-	a.messageHandler = h
-
-	go func() {
-		for tid := range h.outputTextCh {
-			message := tgbotapi.NewMessage(tid.ChatID, tid.Text)
-			_, err := a.botAPI.Send(message)
-			if err != nil {
-				log.Printf("send fail: %s\n", err.Error())
-			}
-		}
-	}()
-
-	return nil
-}
-
-func (n *messageHandler) SuccessLog() {
-	log.Println("setup update handler")
 }

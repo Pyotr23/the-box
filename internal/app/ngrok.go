@@ -9,8 +9,18 @@ import (
 	"golang.ngrok.com/ngrok/config"
 )
 
+const ngrokTunnelName = "ngrok tunnel"
+
 type ngrokTunnel struct {
 	url string
+}
+
+func newNgrokTunnel() *ngrokTunnel {
+	return &ngrokTunnel{}
+}
+
+func (*ngrokTunnel) Name() string {
+	return ngrokTunnelName
 }
 
 func (n *ngrokTunnel) Init(ctx context.Context, a *App) error {
@@ -30,4 +40,12 @@ func (n *ngrokTunnel) Init(ctx context.Context, a *App) error {
 
 func (n *ngrokTunnel) SuccessLog() {
 	log.Printf("tunnel URL %s\n", n.url)
+}
+
+func (*ngrokTunnel) Close(ctx context.Context, a *App) error {
+	return a.tunnel.CloseWithContext(ctx)
+}
+
+func (*ngrokTunnel) CloseLog() {
+	closeLog(ngrokTunnelName)
 }

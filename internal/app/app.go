@@ -18,56 +18,66 @@ type Runner interface {
 	Run(ctx context.Context) error
 }
 
-type Initter interface {
+type Module interface {
+	Name() string
 	Init(ctx context.Context, app *App) error
 	SuccessLog()
+	Close(ctx context.Context, app *App) error
+	CloseLog()
 }
 
 type App struct {
-	tunnel         ngrok.Tunnel
-	botAPI         *tgapi.BotAPI
-	sockets        []rfcomm.Socket
-	messageHandler *messageHandler
-	shutdownStart  chan struct{}
-	shutdownFinish chan struct{}
+	tunnel        ngrok.Tunnel
+	botAPI        *tgapi.BotAPI
+	sockets       []rfcomm.Socket
+	modules       []Module
+	shutdownStart chan struct{}
+	updateCh      chan *tgapi.Update
 }
 
 func NewApp(ctx context.Context) (Runner, error) {
-	a := &App{
-		shutdownStart:  make(chan struct{}),
-		shutdownFinish: make(chan struct{}),
-	}
-	err := a.init(ctx)
-	return a, err
+	a := &App{}
+	return a, a.init(ctx)
 }
 
 func (a *App) Run(ctx context.Context) error {
 	log.Println("run app")
-	err := http.Serve(a.tunnel, http.HandlerFunc(a.handleUpdate))
-	if _, opened := <-a.shutdownStart; opened {
-		return err
+
+	errCh := make(chan error)
+	defer close(errCh)
+
+	go func() {
+		errCh <- http.Serve(a.tunnel, http.HandlerFunc(a.handleUpdate))
+	}()
+
+	select {
+	case err := <-errCh:
+		log.Printf("http serve: %s\n", err.Error())
+	case <-a.shutdownStart:
+		log.Println(" <- get shutdown signal")
 	}
-	<-a.shutdownFinish
-	log.Println("graceful stop listen bot")
+
+	a.close(ctx)
+
 	return nil
 }
 
 func (a *App) init(ctx context.Context) error {
-	inits := []Initter{
-		&ngrokTunnel{},
-		&webhook{},
-		&bot{},
-		&bluetooth{},
-		&messageHandler{},
-		&gracefulShutdown{},
+	a.modules = []Module{
+		newNgrokTunnel(),
+		newWebhook(),
+		newBot(),
+		newBluetooth(),
+		newUpdateHandler(),
+		newGracefulShutdown(),
 	}
 
-	for _, initter := range inits {
-		err := initter.Init(ctx, a)
+	for _, module := range a.modules {
+		err := module.Init(ctx, a)
 		if err != nil {
 			return err
 		}
-		initter.SuccessLog()
+		module.SuccessLog()
 	}
 
 	return nil
@@ -80,5 +90,22 @@ func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.messageHandler.handle(update)
+	a.updateCh <- update
+}
+
+func (a *App) close(ctx context.Context) {
+	for i := len(a.modules) - 1; i >= 0; i-- {
+		m := a.modules[i]
+
+		if err := m.Close(ctx, a); err != nil {
+			log.Printf("failed graceful shutdown of module '%s'", m.Name())
+			continue
+		}
+
+		m.CloseLog()
+	}
+}
+
+func closeLog(name string) {
+	log.Printf("graceful shutdown of module '%s'\n", name)
 }

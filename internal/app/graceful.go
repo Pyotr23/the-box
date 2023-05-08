@@ -2,41 +2,33 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-type gracefulShutdown struct{}
+const gracefulShutdownName = "graceful shutdown"
 
-func (*gracefulShutdown) Init(ctx context.Context, a *App) error {
+type gracefulShutdown struct {
+	c chan os.Signal
+}
+
+func newGracefulShutdown() *gracefulShutdown {
+	return &gracefulShutdown{
+		c: make(chan os.Signal, 1),
+	}
+}
+
+func (gs *gracefulShutdown) Init(ctx context.Context, a *App) error {
 	go func() {
-		done := make(chan os.Signal, 1)
+		a.shutdownStart = make(chan struct{})
 
-		signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		signal.Notify(gs.c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-		<-done
-		close(done)
+		<-gs.c
 
-		close(a.shutdownStart)
-
-		fmt.Println()
-		log.Println("start graceful shutdown")
-
-		err := a.tunnel.CloseWithContext(ctx)
-		if err != nil {
-			log.Printf("tunnel close: %s", err.Error())
-			return
-		}
-
-		for _, s := range a.sockets {
-			s.Close()
-		}
-		log.Println("close sockets")
-
-		close(a.shutdownFinish)
+		a.shutdownStart <- struct{}{}
 	}()
 
 	return nil
@@ -44,4 +36,18 @@ func (*gracefulShutdown) Init(ctx context.Context, a *App) error {
 
 func (*gracefulShutdown) SuccessLog() {
 	log.Println("setup graceful shutdown")
+}
+
+func (gs *gracefulShutdown) Close(ctx context.Context, a *App) error {
+	close(a.shutdownStart)
+	close(gs.c)
+	return nil
+}
+
+func (gs *gracefulShutdown) CloseLog() {
+	log.Println("start graceful shutdown")
+}
+
+func (*gracefulShutdown) Name() string {
+	return gracefulShutdownName
 }

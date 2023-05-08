@@ -10,7 +10,10 @@ import (
 	"strings"
 )
 
-const setWebhookFormat = "https://api.telegram.org/bot%s/setWebhook?url=%s/api/v1/update"
+const (
+	webhookName      = "webhook"
+	setWebhookFormat = "https://api.telegram.org/bot%s/setWebhook?url=%s/api/v1/update"
+)
 
 type (
 	webhook struct {
@@ -23,6 +26,14 @@ type (
 		Description string `json:"description"`
 	}
 )
+
+func newWebhook() *webhook {
+	return &webhook{}
+}
+
+func (*webhook) Name() string {
+	return webhookName
+}
 
 func (w *webhook) Init(ctx context.Context, a *App) error {
 	token := os.Getenv(botTokenEnv)
@@ -53,4 +64,12 @@ func (w *webhook) Init(ctx context.Context, a *App) error {
 
 func (w *webhook) SuccessLog() {
 	log.Println(w.description)
+}
+
+func (*webhook) Close(ctx context.Context, a *App) error {
+	return nil
+}
+
+func (*webhook) CloseLog() {
+	closeLog(webhookName)
 }

@@ -9,7 +9,17 @@ import (
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
+const bluetoothName = "bluetooth"
+
 type bluetooth struct{}
+
+func newBluetooth() *bluetooth {
+	return &bluetooth{}
+}
+
+func (*bluetooth) Name() string {
+	return bluetoothName
+}
 
 func (*bluetooth) Init(ctx context.Context, a *App) error {
 	mac, err := hardware.GetMACAddress()
@@ -34,4 +44,15 @@ func (*bluetooth) Init(ctx context.Context, a *App) error {
 
 func (*bluetooth) SuccessLog() {
 	log.Println("init hc-06")
+}
+
+func (*bluetooth) Close(ctx context.Context, a *App) (err error) {
+	for _, socket := range a.sockets {
+		err = socket.Close()
+	}
+	return
+}
+
+func (*bluetooth) CloseLog() {
+	closeLog(bluetoothName)
 }
