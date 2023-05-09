@@ -1,34 +1,32 @@
-package base
+package handler
 
 import (
 	"log"
-
-	"github.com/Pyotr23/the-box/internal/handler/model"
 )
 
-type BaseHandler struct {
+type baseHandler struct {
 	chatID       int64
-	outputTextCh chan<- model.TextChatID
+	outputTextCh chan<- TextChatID
 }
 
-func NewBaseHandler(chatID int64, outputTextCh chan<- model.TextChatID) BaseHandler {
-	return BaseHandler{
+func newBaseHandler(chatID int64, outputTextCh chan<- TextChatID) baseHandler {
+	return baseHandler{
 		chatID:       chatID,
 		outputTextCh: outputTextCh,
 	}
 }
 
-func (h BaseHandler) ProcessError(err error) {
+func (h baseHandler) ProcessError(err error) {
 	log.Println(err.Error())
 
-	h.outputTextCh <- model.TextChatID{
+	h.outputTextCh <- TextChatID{
 		Text:   err.Error(),
 		ChatID: h.chatID,
 	}
 }
 
-func (h BaseHandler) SendText(text string) {
-	h.outputTextCh <- model.TextChatID{
+func (h baseHandler) SendText(text string) {
+	h.outputTextCh <- TextChatID{
 		Text:   text,
 		ChatID: h.chatID,
 	}

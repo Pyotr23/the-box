@@ -21,9 +21,9 @@ func newGracefulShutdown() *gracefulShutdown {
 }
 
 func (gs *gracefulShutdown) Init(ctx context.Context, a *App) error {
-	go func() {
-		a.shutdownStart = make(chan struct{})
+	a.shutdownStart = make(chan struct{})
 
+	go func() {
 		signal.Notify(gs.c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 		<-gs.c

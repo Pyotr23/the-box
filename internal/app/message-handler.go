@@ -7,9 +7,7 @@ import (
 	"log"
 
 	"github.com/Pyotr23/the-box/internal/enum"
-	"github.com/Pyotr23/the-box/internal/handler/command"
-	"github.com/Pyotr23/the-box/internal/handler/model"
-	"github.com/Pyotr23/the-box/internal/handler/query"
+	"github.com/Pyotr23/the-box/internal/handler"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -19,7 +17,7 @@ const updateHandlerName = "update handler"
 type updateHandler struct {
 	updateCh     chan *tgbotapi.Update
 	inputCh      chan string
-	outputTextCh chan model.TextChatID
+	outputTextCh chan handler.TextChatID
 	waitInputCh  chan struct{}
 	socket       rfcomm.Socket
 }
@@ -32,7 +30,7 @@ func newUpdateHandler() *updateHandler {
 	return &updateHandler{
 		updateCh:     make(chan *tgbotapi.Update),
 		inputCh:      make(chan string),
-		outputTextCh: make(chan model.TextChatID),
+		outputTextCh: make(chan handler.TextChatID),
 		waitInputCh:  make(chan struct{}),
 	}
 }
@@ -100,31 +98,31 @@ func (h *updateHandler) handle(update *tgbotapi.Update) {
 
 	c := h.createCommand(update.Message)
 
-	var handler botCommandHandler
+	var bch botCommandHandler
 	switch c.Code {
 	case enum.TemperatureCode:
-		handler = query.NewQueryHandler(c)
+		bch = handler.NewQueryHandler(c)
 	case enum.RelayOnCode:
-		handler = command.NewCommand(c)
+		bch = handler.NewCommand(c)
 	case enum.RelayOffCode:
-		handler = command.NewCommand(c)
+		bch = handler.NewCommand(c)
 	case enum.SetIDCode:
-		handler = command.NewSetIDCallbackCommand(c, h.inputCh, h.waitInputCh)
+		bch = handler.NewSetIDCallbackCommand(c, h.inputCh, h.waitInputCh)
 	case enum.GetIDCode:
-		handler = query.NewQueryHandler(c)
+		bch = handler.NewQueryHandler(c)
 	case enum.UnknownCode:
-		h.outputTextCh <- model.TextChatID{
+		h.outputTextCh <- handler.TextChatID{
 			Text:   fmt.Sprintf("unknown command '%s'", text),
 			ChatID: c.ChatID,
 		}
 		return
 	}
 
-	handler.Handle()
+	bch.Handle()
 }
 
-func (h *updateHandler) createCommand(msg *tgbotapi.Message) model.Command {
-	return model.Command{
+func (h *updateHandler) createCommand(msg *tgbotapi.Message) handler.Info {
+	return handler.Info{
 		Code:         enum.GetCode(msg.Text),
 		Socket:       h.socket,
 		ChatID:       msg.Chat.ID,

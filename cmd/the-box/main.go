@@ -15,8 +15,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = a.Run(ctx)
-	if err != nil {
-		log.Fatal(err)
+	shutdownCh, errCh := a.Run(ctx)
+
+	select {
+	case err := <-errCh:
+		log.Printf("http serve: %s\n", err.Error())
+	case <-shutdownCh:
+		log.Println(" <- get shutdown signal")
 	}
+	log.Println("was select")
+	a.Exit(ctx)
 }

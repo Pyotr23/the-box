@@ -1,4 +1,4 @@
-package command
+package handler
 
 import (
 	"context"
@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/Pyotr23/the-box/internal/enum"
-	base "github.com/Pyotr23/the-box/internal/handler"
-	"github.com/Pyotr23/the-box/internal/handler/model"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
@@ -22,7 +20,7 @@ const (
 var timeIsOutError = errors.New(timeForAnswerIsOut)
 
 type callbackCommand struct {
-	base        base.BaseHandler
+	base        baseHandler
 	code        enum.Code
 	socket      rfcomm.Socket
 	inputCh     <-chan string
@@ -33,9 +31,9 @@ type SetIDCallbackCommand struct {
 	callbackCommand
 }
 
-func newCallbackCommand(c model.Command, inputCh <-chan string, waitInputCh chan struct{}) callbackCommand {
+func newCallbackCommand(c Info, inputCh <-chan string, waitInputCh chan struct{}) callbackCommand {
 	return callbackCommand{
-		base:        base.NewBaseHandler(c.ChatID, c.OutputTextCh),
+		base:        newBaseHandler(c.ChatID, c.OutputTextCh),
 		code:        c.Code,
 		socket:      c.Socket,
 		inputCh:     inputCh,
@@ -43,7 +41,7 @@ func newCallbackCommand(c model.Command, inputCh <-chan string, waitInputCh chan
 	}
 }
 
-func NewSetIDCallbackCommand(c model.Command, inputCh <-chan string, waitInputCh chan struct{}) SetIDCallbackCommand {
+func NewSetIDCallbackCommand(c Info, inputCh <-chan string, waitInputCh chan struct{}) SetIDCallbackCommand {
 	return SetIDCallbackCommand{
 		callbackCommand: newCallbackCommand(c, inputCh, waitInputCh),
 	}

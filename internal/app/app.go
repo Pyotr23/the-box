@@ -14,8 +14,9 @@ const (
 	botTokenEnv = "THEBOX_BOTTOKEN"
 )
 
-type Runner interface {
-	Run(ctx context.Context) error
+type IApp interface {
+	Run(ctx context.Context) (chan struct{}, chan error)
+	Exit(ctx context.Context)
 }
 
 type Module interface {
@@ -35,31 +36,34 @@ type App struct {
 	updateCh      chan *tgapi.Update
 }
 
-func NewApp(ctx context.Context) (Runner, error) {
+func NewApp(ctx context.Context) (IApp, error) {
 	a := &App{}
 	return a, a.init(ctx)
 }
 
-func (a *App) Run(ctx context.Context) error {
+func (a *App) Run(ctx context.Context) (chan struct{}, chan error) {
 	log.Println("run app")
 
 	errCh := make(chan error)
-	defer close(errCh)
 
 	go func() {
 		errCh <- http.Serve(a.tunnel, http.HandlerFunc(a.handleUpdate))
 	}()
 
-	select {
-	case err := <-errCh:
-		log.Printf("http serve: %s\n", err.Error())
-	case <-a.shutdownStart:
-		log.Println(" <- get shutdown signal")
+	return a.shutdownStart, errCh
+}
+
+func (a *App) Exit(ctx context.Context) {
+	for i := len(a.modules) - 1; i >= 0; i-- {
+		m := a.modules[i]
+
+		if err := m.Close(ctx, a); err != nil {
+			log.Printf("failed graceful shutdown of module '%s'", m.Name())
+			continue
+		}
+
+		m.CloseLog()
 	}
-
-	a.close(ctx)
-
-	return nil
 }
 
 func (a *App) init(ctx context.Context) error {
@@ -91,19 +95,6 @@ func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.updateCh <- update
-}
-
-func (a *App) close(ctx context.Context) {
-	for i := len(a.modules) - 1; i >= 0; i-- {
-		m := a.modules[i]
-
-		if err := m.Close(ctx, a); err != nil {
-			log.Printf("failed graceful shutdown of module '%s'", m.Name())
-			continue
-		}
-
-		m.CloseLog()
-	}
 }
 
 func closeLog(name string) {

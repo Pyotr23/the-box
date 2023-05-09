@@ -1,23 +1,21 @@
-package query
+package handler
 
 import (
 	"fmt"
 
 	"github.com/Pyotr23/the-box/internal/enum"
-	base "github.com/Pyotr23/the-box/internal/handler"
-	"github.com/Pyotr23/the-box/internal/handler/model"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
 type QueryHandler struct {
-	base   base.BaseHandler
+	base   baseHandler
 	code   enum.Code
 	socket rfcomm.Socket
 }
 
-func NewQueryHandler(c model.Command) QueryHandler {
+func NewQueryHandler(c Info) QueryHandler {
 	return QueryHandler{
-		base:   base.NewBaseHandler(c.ChatID, c.OutputTextCh),
+		base:   newBaseHandler(c.ChatID, c.OutputTextCh),
 		code:   c.Code,
 		socket: c.Socket,
 	}
