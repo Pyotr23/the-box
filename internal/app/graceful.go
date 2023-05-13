@@ -28,7 +28,7 @@ func (gs *gracefulShutdown) Init(ctx context.Context, a *App) error {
 
 		<-gs.c
 
-		a.shutdownStart <- struct{}{}
+		close(a.shutdownStart)
 	}()
 
 	return nil
@@ -39,7 +39,6 @@ func (*gracefulShutdown) SuccessLog() {
 }
 
 func (gs *gracefulShutdown) Close(ctx context.Context, a *App) error {
-	close(a.shutdownStart)
 	close(gs.c)
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Pyotr23/the-box/internal/enum"
+	"github.com/Pyotr23/the-box/internal/handler/model"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
@@ -13,7 +14,7 @@ type Command struct {
 	socket rfcomm.Socket
 }
 
-func NewCommand(c Info) Command {
+func NewCommand(c model.Info) Command {
 	return Command{
 		base:   newBaseHandler(c.ChatID, c.OutputTextCh),
 		code:   c.Code,

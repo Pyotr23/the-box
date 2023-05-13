@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Pyotr23/the-box/internal/enum"
+	"github.com/Pyotr23/the-box/internal/handler/model"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
@@ -13,7 +14,7 @@ type QueryHandler struct {
 	socket rfcomm.Socket
 }
 
-func NewQueryHandler(c Info) QueryHandler {
+func NewQueryHandler(c model.Info) QueryHandler {
 	return QueryHandler{
 		base:   newBaseHandler(c.ChatID, c.OutputTextCh),
 		code:   c.Code,

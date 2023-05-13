@@ -1,18 +1,18 @@
-package handler
+package model
 
 import (
 	"github.com/Pyotr23/the-box/internal/enum"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
-type Info struct {
-	Code         enum.Code
-	Socket       rfcomm.Socket
-	ChatID       int64
-	OutputTextCh chan TextChatID
+type Message struct {
+	ChatID int64
+	Text   string
 }
 
-type TextChatID struct {
-	Text   string
-	ChatID int64
+type Info struct {
+	ChatID       int64
+	OutputTextCh chan Message
+	Code         enum.Code
+	Socket       rfcomm.Socket
 }

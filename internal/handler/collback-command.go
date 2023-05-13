@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Pyotr23/the-box/internal/enum"
+	"github.com/Pyotr23/the-box/internal/handler/model"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
@@ -31,7 +32,7 @@ type SetIDCallbackCommand struct {
 	callbackCommand
 }
 
-func newCallbackCommand(c Info, inputCh <-chan string, waitInputCh chan struct{}) callbackCommand {
+func newCallbackCommand(c model.Info, inputCh <-chan string, waitInputCh chan struct{}) callbackCommand {
 	return callbackCommand{
 		base:        newBaseHandler(c.ChatID, c.OutputTextCh),
 		code:        c.Code,
@@ -41,7 +42,7 @@ func newCallbackCommand(c Info, inputCh <-chan string, waitInputCh chan struct{}
 	}
 }
 
-func NewSetIDCallbackCommand(c Info, inputCh <-chan string, waitInputCh chan struct{}) SetIDCallbackCommand {
+func NewSetIDCallbackCommand(c model.Info, inputCh <-chan string, waitInputCh chan struct{}) SetIDCallbackCommand {
 	return SetIDCallbackCommand{
 		callbackCommand: newCallbackCommand(c, inputCh, waitInputCh),
 	}

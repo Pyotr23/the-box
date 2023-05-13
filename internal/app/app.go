@@ -2,11 +2,13 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 
+	"github.com/Pyotr23/the-box/internal/handler/model"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
-	tgapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang.ngrok.com/ngrok"
 )
 
@@ -28,12 +30,13 @@ type Module interface {
 }
 
 type App struct {
-	tunnel        ngrok.Tunnel
-	botAPI        *tgapi.BotAPI
-	sockets       []rfcomm.Socket
-	modules       []Module
-	shutdownStart chan struct{}
-	updateCh      chan *tgapi.Update
+	modules         []Module
+	tunnel          ngrok.Tunnel
+	sockets         []rfcomm.Socket
+	shutdownStart   chan struct{}
+	updateCh        chan *tgbotapi.Update
+	inputMessageCh  chan model.Message
+	outputMessageCh chan model.Message
 }
 
 func NewApp(ctx context.Context) (IApp, error) {
@@ -72,7 +75,7 @@ func (a *App) init(ctx context.Context) error {
 		newWebhook(),
 		newBot(),
 		newBluetooth(),
-		newUpdateHandler(),
+		newMessage(),
 		newGracefulShutdown(),
 	}
 
@@ -87,14 +90,19 @@ func (a *App) init(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request) {
-	update, err := a.botAPI.HandleUpdate(r)
-	if err != nil {
-		log.Printf("handle update: %s", err.Error())
+func (a *App) handleUpdate(_ http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		log.Println("not POST update method")
 		return
 	}
 
-	a.updateCh <- update
+	var update tgbotapi.Update
+	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+		log.Printf("decode: %s\n", err.Error())
+		return
+	}
+
+	a.updateCh <- &update
 }
 
 func closeLog(name string) {
