@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/Pyotr23/the-box/internal/enum"
 	"github.com/Pyotr23/the-box/internal/handler/model"
@@ -29,12 +30,12 @@ func (h QueryHandler) Handle() {
 			h.base.ProcessError(fmt.Errorf("query handle: %w", err))
 		}
 	}()
-
+	log.Printf("query code %v\n", h.code)
 	answer, err := h.socket.Query(h.code)
 	if err != nil {
 		err = fmt.Errorf("query: %w", err)
 		return
 	}
-
+	log.Printf("answer '%s'\n", answer)
 	h.base.SendText(answer)
 }

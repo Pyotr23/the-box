@@ -57,6 +57,7 @@ func (b *bot) Init(ctx context.Context, a *App) (err error) {
 
 	go func() {
 		for m := range b.outputMessageCh {
+			log.Printf("message %v\n", m)
 			message := tgbotapi.NewMessage(m.ChatID, m.Text)
 			_, err := b.api.Send(message)
 			if err != nil {

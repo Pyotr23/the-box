@@ -5,7 +5,10 @@
 
 #define DHTPIN 2
 
+
 DHT dht(DHTPIN, DHT11);
+
+const bool IS_DEBUG = false;  
 
 const int LED = 13;
 
@@ -13,14 +16,30 @@ const byte SUCCESS = 1;
 const byte ERROR = 0;
 
 const int ID_ADDRESS = 0;
+const int LOWER_TEMPERATURE_THRESHOLD_ADDRESS = 1;
+const int HIGHER_TEMPERATURE_THRESHOLD_ADDRESS = 2;
 
-const bool IS_DEBUG = false;   
+const int WAITING_TIMEOUT_MS = 5000;
+const int WAITING_SLEEP_TIMEOUT_MS = 100;
+
+int waitingCount;
+
+byte id, lowerTemperatureThreshold, higherTemperatureThreshold;  
 
 void setup() {
   Serial.begin(9600);
+  
   pinMode(LED, OUTPUT);
+  
   digitalWrite(LED, HIGH);
+  
   dht.begin();
+
+  waitingCount = WAITING_TIMEOUT_MS / WAITING_SLEEP_TIMEOUT_MS;
+
+  lowerTemperatureThreshold = EEPROM.read(LOWER_TEMPERATURE_THRESHOLD_ADDRESS);
+  higherTemperatureThreshold = EEPROM.read(HIGHER_TEMPERATURE_THRESHOLD_ADDRESS);
+  id = EEPROM.read(ID_ADDRESS);
 }
 
 void loop() {
@@ -31,8 +50,10 @@ void loop() {
   int intCommand = Serial.read();
   if (IS_DEBUG) {
     intCommand -= 48;
+    Serial.println(intCommand);
   }
-  
+
+  // switch/case doesn't working... i don't know why...
   Command command = IntToCommand(intCommand);
   if (command == RELAY_OFF) {
     digitalWrite(LED, LOW);
@@ -49,34 +70,55 @@ void loop() {
       dtostrf(t, 4, 1, buffer);    
       writeSuccessMsg(buffer);
     }
-  } else if (command == SET_ID) {
-    int id = 0;
-    for (int i = 0; i < 30; i++) {
-      delay(100);
+  } else if (command == SET_ID) {    
+    id = waitNumber();  
+    if (id == 0) {
+      writeErrorMsg("id not waited");
+      return;
+    }   
+    EEPROM.write(ID_ADDRESS, id);    
+    sendSuccess();
+  } else if (command == GET_ID) {    
+    writeSuccessMsg(id);  
+  } else if (command == GET_LOWER_TEMPERATURE_THRESHOLD) {
+    writeSuccessMsg(lowerTemperatureThreshold);
+  } else if (command == GET_HIGHER_TEMPERATURE_THRESHOLD) {
+    writeSuccessMsg(higherTemperatureThreshold);
+  } else if (command == UNKNOWN) {
+    writeErrorMsg("unknown command");
+  } else if (command == SET_LOWER_TEMPERATURE_THRESHOLD) {    
+    lowerTemperatureThreshold = waitNumber();  
+    if (lowerTemperatureThreshold == 0) {
+      writeErrorMsg("lower temperature threshold not waited");
+      return;
+    }   
+    EEPROM.write(LOWER_TEMPERATURE_THRESHOLD_ADDRESS, lowerTemperatureThreshold);    
+    sendSuccess();
+  } else if (command == SET_HIGHER_TEMPERATURE_THRESHOLD) {    
+    higherTemperatureThreshold = waitNumber();  
+    if (higherTemperatureThreshold == 0) {
+      writeErrorMsg("higher temperature threshold not waited");
+      return;
+    }   
+    EEPROM.write(HIGHER_TEMPERATURE_THRESHOLD_ADDRESS, higherTemperatureThreshold);    
+    sendSuccess();
+  }
+}
+
+byte waitNumber() {  
+  for (int i = 0; i < waitingCount; i++) {
+      delay(WAITING_SLEEP_TIMEOUT_MS);
       if (Serial.available() == 0) {
         continue;
       }
       
-      id = Serial.read();
+      byte n = Serial.read();
       if (IS_DEBUG) {        
-        id -= 48;
+        n -= 48;
       }
-      break;
+      return n;
     }
-  
-    if (id == 0) {
-      writeErrorMsg("id not waited");
-      return;
-    }
-   
-    EEPROM.write(ID_ADDRESS, id);
-    sendSuccess();
-  } else if (command == GET_ID) {
-    int currentId = EEPROM.read(ID_ADDRESS);
-    writeSuccessMsg(currentId);
-  } else if (command == UNKNOWN) {
-    writeErrorMsg("unknown command");
-  }  
+  return 0;
 }
 
 void sendSuccess() {
