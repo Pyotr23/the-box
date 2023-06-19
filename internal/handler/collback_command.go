@@ -18,6 +18,7 @@ const (
 	enterBluetoothDeviceID          = "enter bluetooth device id"
 	enterLowerTemperatureThreshold  = "enter lower temperature threshold"
 	enterHigherTemperatureThreshold = "enter higher temperature threshold"
+	enterMode                       = "enter mode"
 	secondsBeforeTimeout            = 5
 )
 
@@ -101,6 +102,16 @@ type SetIDCallbackCommand struct {
 func NewSetIDCallbackCommand(c model.Info, inputCh <-chan string, waitInputCh chan struct{}) SetIDCallbackCommand {
 	return SetIDCallbackCommand{
 		baseCallbackCommand: NewBaseCallbackCommand(c, inputCh, waitInputCh, enterBluetoothDeviceID),
+	}
+}
+
+type SetModeCallbackCommand struct {
+	baseCallbackCommand
+}
+
+func NewSetModeCallbackCommand(c model.Info, inputCh <-chan string, waitInputCh chan struct{}) SetModeCallbackCommand {
+	return SetModeCallbackCommand{
+		baseCallbackCommand: NewBaseCallbackCommand(c, inputCh, waitInputCh, enterMode),
 	}
 }
 

@@ -13,6 +13,8 @@ const (
 	GetHigherTemperatureThresholdCode
 	SetLowerTemperatureThresholdCode
 	SetHigherTemperatureThresholdCode
+	SetModeCode
+	GetModeCode
 )
 
 type BotCommand string
@@ -27,6 +29,8 @@ const (
 	GetHigherTemperatureThreshold BotCommand = "/get_high_temp_thrld"
 	SetLowerTemperatureThreshold  BotCommand = "/set_low_temp_thrld"
 	SetHigherTemperatureThreshold BotCommand = "/set_high_temp_thrld"
+	SetMode                       BotCommand = "/set_mode"
+	GetMode                       BotCommand = "/get_mode"
 )
 
 var codeByBotCommand = map[BotCommand]Code{
@@ -39,6 +43,8 @@ var codeByBotCommand = map[BotCommand]Code{
 	GetHigherTemperatureThreshold: GetHigherTemperatureThresholdCode,
 	SetLowerTemperatureThreshold:  SetLowerTemperatureThresholdCode,
 	SetHigherTemperatureThreshold: SetHigherTemperatureThresholdCode,
+	SetMode:                       SetModeCode,
+	GetMode:                       GetModeCode,
 }
 
 func GetCode(c string) Code {

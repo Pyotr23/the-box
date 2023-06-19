@@ -109,6 +109,10 @@ func (m *message) getHandler(msg model.Message) (h botCommandHandler) {
 		return handler.NewSetLowerTemperatureThresholdCallbackCommand(info, m.inlineTextCh, m.waitInputCh)
 	case enum.SetHigherTemperatureThresholdCode:
 		return handler.NewSetHigherTemperatureThresholdCallbackCommand(info, m.inlineTextCh, m.waitInputCh)
+	case enum.SetModeCode:
+		return handler.NewSetModeCallbackCommand(info, m.inlineTextCh, m.waitInputCh)
+	case enum.GetModeCode:
+		return handler.NewQueryHandler(info)
 	case enum.UnknownCode:
 		return handler.NewUnknownHandler(info)
 	}

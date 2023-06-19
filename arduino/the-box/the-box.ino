@@ -18,13 +18,14 @@ const byte ERROR = 0;
 const int ID_ADDRESS = 0;
 const int LOWER_TEMPERATURE_THRESHOLD_ADDRESS = 1;
 const int HIGHER_TEMPERATURE_THRESHOLD_ADDRESS = 2;
+const int MODE_ADDRESS = 3;
 
 const int WAITING_TIMEOUT_MS = 5000;
 const int WAITING_SLEEP_TIMEOUT_MS = 100;
 
 int waitingCount;
 
-byte id, lowerTemperatureThreshold, higherTemperatureThreshold;  
+byte id, lowerTemperatureThreshold, higherTemperatureThreshold, mode;  
 
 void setup() {
   Serial.begin(9600);
@@ -40,6 +41,7 @@ void setup() {
   lowerTemperatureThreshold = EEPROM.read(LOWER_TEMPERATURE_THRESHOLD_ADDRESS);
   higherTemperatureThreshold = EEPROM.read(HIGHER_TEMPERATURE_THRESHOLD_ADDRESS);
   id = EEPROM.read(ID_ADDRESS);
+  mode = EEPROM.read(MODE_ADDRESS);
 }
 
 void loop() {
@@ -72,7 +74,7 @@ void loop() {
     }
   } else if (command == SET_ID) {    
     id = waitNumber();  
-    if (id == 0) {
+    if (id == -1) {
       writeErrorMsg("id not waited");
       return;
     }   
@@ -88,7 +90,7 @@ void loop() {
     writeErrorMsg("unknown command");
   } else if (command == SET_LOWER_TEMPERATURE_THRESHOLD) {    
     lowerTemperatureThreshold = waitNumber();  
-    if (lowerTemperatureThreshold == 0) {
+    if (lowerTemperatureThreshold == -1) {
       writeErrorMsg("lower temperature threshold not waited");
       return;
     }   
@@ -96,12 +98,22 @@ void loop() {
     sendSuccess();
   } else if (command == SET_HIGHER_TEMPERATURE_THRESHOLD) {    
     higherTemperatureThreshold = waitNumber();  
-    if (higherTemperatureThreshold == 0) {
+    if (higherTemperatureThreshold == -1) {
       writeErrorMsg("higher temperature threshold not waited");
       return;
     }   
     EEPROM.write(HIGHER_TEMPERATURE_THRESHOLD_ADDRESS, higherTemperatureThreshold);    
     sendSuccess();
+  } else if (command == SET_MODE) {    
+    mode = waitNumber();  
+    if (mode == -1) {
+      writeErrorMsg("mode not waited");
+      return;
+    }   
+    EEPROM.write(MODE_ADDRESS, mode);    
+    sendSuccess();
+  } else if (command == GET_MODE) {    
+    writeSuccessMsg(mode);
   }
 }
 
@@ -118,7 +130,7 @@ byte waitNumber() {
       }
       return n;
     }
-  return 0;
+  return -1;
 }
 
 void sendSuccess() {
