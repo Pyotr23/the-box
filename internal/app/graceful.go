@@ -11,35 +11,35 @@ import (
 const gracefulShutdownName = "graceful shutdown"
 
 type gracefulShutdown struct {
-	c chan os.Signal
+	signalCh chan os.Signal
+	runCh    chan struct{}
 }
 
 func newGracefulShutdown() *gracefulShutdown {
 	return &gracefulShutdown{
-		c: make(chan os.Signal, 1),
+		signalCh: make(chan os.Signal, 1),
+		runCh:    make(chan struct{}),
 	}
 }
 
-func (gs *gracefulShutdown) Init(ctx context.Context, a *App) error {
-	a.shutdownStart = make(chan struct{})
-
+func (gs *gracefulShutdown) Init(ctx context.Context, _ interface{}) (interface{}, error) {
 	go func() {
-		signal.Notify(gs.c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		signal.Notify(gs.signalCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-		<-gs.c
+		<-gs.signalCh
 
-		close(a.shutdownStart)
+		close(gs.runCh)
 	}()
 
-	return nil
+	return gs.runCh, nil
 }
 
 func (*gracefulShutdown) SuccessLog() {
 	log.Println("setup graceful shutdown")
 }
 
-func (gs *gracefulShutdown) Close(ctx context.Context, a *App) error {
-	close(gs.c)
+func (gs *gracefulShutdown) Close(ctx context.Context) error {
+	close(gs.signalCh)
 	return nil
 }
 

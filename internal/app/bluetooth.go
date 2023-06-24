@@ -11,7 +11,9 @@ import (
 
 const bluetoothName = "bluetooth"
 
-type bluetooth struct{}
+type bluetooth struct {
+	sockets []rfcomm.Socket
+}
 
 func newBluetooth() *bluetooth {
 	return &bluetooth{}
@@ -21,36 +23,38 @@ func (*bluetooth) Name() string {
 	return bluetoothName
 }
 
-func (*bluetooth) Init(ctx context.Context, a *App) error {
+func (b *bluetooth) Init(ctx context.Context, _ interface{}) (interface{}, error) {
 	mac, err := hardware.GetMACAddress()
 	if err != nil {
-		return fmt.Errorf("get mac address: %w", err)
+		return nil, fmt.Errorf("get mac address: %w", err)
 	}
 
 	socket, err := rfcomm.NewSocket()
 	if err != nil {
-		return fmt.Errorf("new socket: %w", err)
+		return nil, fmt.Errorf("new socket: %w", err)
 	}
 
 	err = socket.Connect(mac)
 	if err != nil {
-		return fmt.Errorf("socket connect: %w", err)
+		return nil, fmt.Errorf("socket connect: %w", err)
 	}
 
-	a.sockets = append(a.sockets, socket)
+	b.sockets = append(b.sockets, socket)
 
-	return nil
+	return b.sockets, nil
 }
 
 func (*bluetooth) SuccessLog() {
 	log.Println("init hc-06")
 }
 
-func (*bluetooth) Close(ctx context.Context, a *App) (err error) {
-	for _, socket := range a.sockets {
-		err = socket.Close()
+func (b *bluetooth) Close(ctx context.Context) error {
+	for _, socket := range b.sockets {
+		if err := socket.Close(); err != nil {
+			return err
+		}
 	}
-	return
+	return nil
 }
 
 func (*bluetooth) CloseLog() {

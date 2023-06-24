@@ -12,7 +12,7 @@ import (
 const ngrokTunnelName = "ngrok tunnel"
 
 type ngrokTunnel struct {
-	url string
+	tunnel ngrok.Tunnel
 }
 
 func newNgrokTunnel() *ngrokTunnel {
@@ -23,27 +23,24 @@ func (*ngrokTunnel) Name() string {
 	return ngrokTunnelName
 }
 
-func (n *ngrokTunnel) Init(ctx context.Context, a *App) error {
-	tunnel, err := ngrok.Listen(context.Background(),
+func (nt *ngrokTunnel) Init(ctx context.Context, _ interface{}) (url interface{}, err error) {
+	nt.tunnel, err = ngrok.Listen(context.Background(),
 		config.HTTPEndpoint(),
 		ngrok.WithAuthtokenFromEnv(),
 	)
 	if err != nil {
-		return fmt.Errorf("ngrok listen: %w", err)
+		return nil, fmt.Errorf("ngrok listen: %w", err)
 	}
 
-	a.tunnel = tunnel
-	n.url = tunnel.URL()
-
-	return nil
+	return nt.tunnel.URL(), nil
 }
 
-func (n *ngrokTunnel) SuccessLog() {
-	log.Printf("tunnel URL %s\n", n.url)
+func (nt *ngrokTunnel) SuccessLog() {
+	log.Printf("tunnel URL %s\n", nt.tunnel.URL())
 }
 
-func (*ngrokTunnel) Close(ctx context.Context, a *App) error {
-	return a.tunnel.CloseWithContext(ctx)
+func (nt *ngrokTunnel) Close(ctx context.Context) error {
+	return nt.tunnel.CloseWithContext(ctx)
 }
 
 func (*ngrokTunnel) CloseLog() {

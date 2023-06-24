@@ -23,9 +23,9 @@ type IApp interface {
 
 type Module interface {
 	Name() string
-	Init(ctx context.Context, app *App) error
+	Init(ctx context.Context, input interface{}) (interface{}, error)
 	SuccessLog()
-	Close(ctx context.Context, app *App) error
+	Close(ctx context.Context) error
 	CloseLog()
 }
 
@@ -60,7 +60,7 @@ func (a *App) Exit(ctx context.Context) {
 	for i := len(a.modules) - 1; i >= 0; i-- {
 		m := a.modules[i]
 
-		if err := m.Close(ctx, a); err != nil {
+		if err := m.Close(ctx); err != nil {
 			log.Printf("failed graceful shutdown of module '%s'", m.Name())
 			continue
 		}
@@ -79,12 +79,16 @@ func (a *App) init(ctx context.Context) error {
 		newGracefulShutdown(),
 	}
 
+	var initData interface{}
 	for _, module := range a.modules {
-		err := module.Init(ctx, a)
+		output, err := module.Init(ctx, initData)
 		if err != nil {
 			return err
 		}
+
 		module.SuccessLog()
+
+		initData = output
 	}
 
 	return nil
