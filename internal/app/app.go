@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Pyotr23/the-box/internal/handler/model"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang.ngrok.com/ngrok"
@@ -16,30 +15,34 @@ const (
 	botTokenEnv = "THEBOX_BOTTOKEN"
 )
 
-type IApp interface {
-	Run(ctx context.Context) (chan struct{}, chan error)
-	Exit(ctx context.Context)
-}
-
-type Module interface {
+type module interface {
 	Name() string
-	Init(ctx context.Context, input interface{}) (interface{}, error)
+	Init(ctx context.Context, mediator *mediator) error
 	SuccessLog()
 	Close(ctx context.Context) error
 	CloseLog()
 }
 
-type App struct {
-	modules         []Module
-	tunnel          ngrok.Tunnel
-	sockets         []rfcomm.Socket
-	shutdownStart   chan struct{}
-	updateCh        chan *tgbotapi.Update
-	inputMessageCh  chan model.Message
-	outputMessageCh chan model.Message
-}
+type (
+	mediator struct {
+		tunnel          ngrok.Tunnel
+		sockets         []rfcomm.Socket
+		shutdownStartCh chan struct{}
+	}
 
-func NewApp(ctx context.Context) (IApp, error) {
+	App struct {
+		modules  []module
+		mediator *mediator
+		// tunnel          ngrok.Tunnel
+		// sockets         []rfcomm.Socket
+		// shutdownStart   chan struct{}
+		// updateCh        chan *tgbotapi.Update
+		// inputMessageCh  chan model.Message
+		// outputMessageCh chan model.Message
+	}
+)
+
+func NewApp(ctx context.Context) (*App, error) {
 	a := &App{}
 	return a, a.init(ctx)
 }
@@ -50,10 +53,10 @@ func (a *App) Run(ctx context.Context) (chan struct{}, chan error) {
 	errCh := make(chan error)
 
 	go func() {
-		errCh <- http.Serve(a.tunnel, http.HandlerFunc(a.handleUpdate))
+		errCh <- http.Serve(a.mediator.tunnel, http.HandlerFunc(a.handleUpdate))
 	}()
 
-	return a.shutdownStart, errCh
+	return a.mediator.shutdownStartCh, errCh
 }
 
 func (a *App) Exit(ctx context.Context) {
@@ -70,7 +73,7 @@ func (a *App) Exit(ctx context.Context) {
 }
 
 func (a *App) init(ctx context.Context) error {
-	a.modules = []Module{
+	a.modules = []module{
 		newNgrokTunnel(),
 		newWebhook(),
 		newBot(),
@@ -79,16 +82,13 @@ func (a *App) init(ctx context.Context) error {
 		newGracefulShutdown(),
 	}
 
-	var initData interface{}
 	for _, module := range a.modules {
-		output, err := module.Init(ctx, initData)
+		err := module.Init(ctx, a.mediator)
 		if err != nil {
 			return err
 		}
 
 		module.SuccessLog()
-
-		initData = output
 	}
 
 	return nil

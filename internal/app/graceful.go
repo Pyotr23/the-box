@@ -22,7 +22,7 @@ func newGracefulShutdown() *gracefulShutdown {
 	}
 }
 
-func (gs *gracefulShutdown) Init(ctx context.Context, _ interface{}) (interface{}, error) {
+func (gs *gracefulShutdown) Init(ctx context.Context, mediator *mediator) error {
 	go func() {
 		signal.Notify(gs.signalCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
@@ -31,7 +31,9 @@ func (gs *gracefulShutdown) Init(ctx context.Context, _ interface{}) (interface{
 		close(gs.runCh)
 	}()
 
-	return gs.runCh, nil
+	mediator.shutdownStartCh = gs.runCh
+
+	return nil
 }
 
 func (*gracefulShutdown) SuccessLog() {

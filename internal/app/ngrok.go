@@ -23,16 +23,19 @@ func (*ngrokTunnel) Name() string {
 	return ngrokTunnelName
 }
 
-func (nt *ngrokTunnel) Init(ctx context.Context, _ interface{}) (url interface{}, err error) {
+func (nt *ngrokTunnel) Init(ctx context.Context, mediator *mediator) error {
+	var err error
 	nt.tunnel, err = ngrok.Listen(context.Background(),
 		config.HTTPEndpoint(),
 		ngrok.WithAuthtokenFromEnv(),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("ngrok listen: %w", err)
+		return fmt.Errorf("ngrok listen: %w", err)
 	}
 
-	return nt.tunnel.URL(), nil
+	mediator.tunnel = nt.tunnel
+
+	return nil
 }
 
 func (nt *ngrokTunnel) SuccessLog() {

@@ -23,25 +23,27 @@ func (*bluetooth) Name() string {
 	return bluetoothName
 }
 
-func (b *bluetooth) Init(ctx context.Context, _ interface{}) (interface{}, error) {
+func (b *bluetooth) Init(ctx context.Context, mediator *mediator) error {
 	mac, err := hardware.GetMACAddress()
 	if err != nil {
-		return nil, fmt.Errorf("get mac address: %w", err)
+		return fmt.Errorf("get mac address: %w", err)
 	}
 
 	socket, err := rfcomm.NewSocket()
 	if err != nil {
-		return nil, fmt.Errorf("new socket: %w", err)
+		return fmt.Errorf("new socket: %w", err)
 	}
 
 	err = socket.Connect(mac)
 	if err != nil {
-		return nil, fmt.Errorf("socket connect: %w", err)
+		return fmt.Errorf("socket connect: %w", err)
 	}
 
 	b.sockets = append(b.sockets, socket)
 
-	return b.sockets, nil
+	mediator.sockets = b.sockets
+
+	return nil
 }
 
 func (*bluetooth) SuccessLog() {

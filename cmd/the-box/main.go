@@ -7,10 +7,18 @@ import (
 	"github.com/Pyotr23/the-box/internal/app"
 )
 
-func main() {
-	ctx := context.Background()
+type IApp interface {
+	Run(ctx context.Context) (chan struct{}, chan error)
+	Exit(ctx context.Context)
+}
 
-	a, err := app.NewApp(ctx)
+func main() {
+	var (
+		a   IApp
+		err error
+		ctx = context.Background()
+	)
+	a, err = app.NewApp(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,6 +31,8 @@ func main() {
 	case <-shutdownCh:
 		log.Println(" <- get shutdown signal")
 	}
+
 	log.Println("was select")
+
 	a.Exit(ctx)
 }

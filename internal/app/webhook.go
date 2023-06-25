@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,36 +35,32 @@ func (*webhook) Name() string {
 	return webhookName
 }
 
-func (w *webhook) Init(ctx context.Context, tunnelUrl interface{}) (interface{}, error) {
+func (w *webhook) Init(ctx context.Context, mediator *mediator) error {
 	token := os.Getenv(botTokenEnv)
 	if token == "" {
-		return nil, fmt.Errorf("empty bot token environment %s", botTokenEnv)
+		return fmt.Errorf("empty bot token environment %s", botTokenEnv)
 	}
 
-	tunnelUrl, ok := tunnelUrl.(string)
-	if !ok {
-		return nil, errors.New("tunnel url not a string type")
-	}
-
-	url := fmt.Sprintf(setWebhookFormat, token, tunnelUrl)
+	url := fmt.Sprintf(setWebhookFormat, token, mediator.tunnel.URL())
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("set webhook: %w", err)
+		return fmt.Errorf("set webhook: %w", err)
 	}
 
 	var wr webhookResp
 	err = json.NewDecoder(resp.Body).Decode(&wr)
 	if err != nil {
-		return nil, fmt.Errorf("decode webhook response: %w", err)
+		return fmt.Errorf("decode webhook response: %w", err)
 	}
 
-	if !(wr.Ok && wr.Result) {
-		return nil, fmt.Errorf("webhook response description: %s", wr.Description)
+	failed := !(wr.Ok && wr.Result)
+	if failed {
+		return fmt.Errorf("webhook response description: %s", wr.Description)
 	}
 
 	w.description = strings.ToLower(wr.Description)
 
-	return nil, nil
+	return nil
 }
 
 func (w *webhook) SuccessLog() {
