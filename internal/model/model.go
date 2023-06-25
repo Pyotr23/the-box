@@ -5,14 +5,14 @@ import (
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
-type Message struct {
+type TextChatID struct {
 	ChatID int64
 	Text   string
 }
 
 type Info struct {
 	ChatID       int64
-	OutputTextCh chan Message
+	OutputTextCh chan TextChatID
 	Code         enum.Code
 	Socket       rfcomm.Socket
 }

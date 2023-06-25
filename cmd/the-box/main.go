@@ -29,10 +29,8 @@ func main() {
 	case err := <-errCh:
 		log.Printf("http serve: %s\n", err.Error())
 	case <-shutdownCh:
-		log.Println(" <- get shutdown signal")
+		log.Println("shutdown signal")
 	}
-
-	log.Println("was select")
 
 	a.Exit(ctx)
 }

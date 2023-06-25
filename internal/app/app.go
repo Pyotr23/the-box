@@ -2,13 +2,13 @@ package app
 
 import (
 	"context"
-	"encoding/json"
-	"log"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
 
+	"github.com/Pyotr23/the-box/internal/helper"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"golang.ngrok.com/ngrok"
 )
 
 const (
@@ -25,9 +25,10 @@ type module interface {
 
 type (
 	mediator struct {
-		tunnel          ngrok.Tunnel
+		tunnel          net.Listener
 		sockets         []rfcomm.Socket
 		shutdownStartCh chan struct{}
+		updateCh        chan io.ReadCloser
 	}
 
 	App struct {
@@ -43,12 +44,14 @@ type (
 )
 
 func NewApp(ctx context.Context) (*App, error) {
-	a := &App{}
+	a := &App{
+		mediator: &mediator{},
+	}
 	return a, a.init(ctx)
 }
 
 func (a *App) Run(ctx context.Context) (chan struct{}, chan error) {
-	log.Println("run app")
+	helper.Logln("run app")
 
 	errCh := make(chan error)
 
@@ -64,7 +67,7 @@ func (a *App) Exit(ctx context.Context) {
 		m := a.modules[i]
 
 		if err := m.Close(ctx); err != nil {
-			log.Printf("failed graceful shutdown of module '%s'", m.Name())
+			helper.Logln(fmt.Sprintf("failed graceful shutdown of module '%s'", m.Name()))
 			continue
 		}
 
@@ -76,9 +79,9 @@ func (a *App) init(ctx context.Context) error {
 	a.modules = []module{
 		newNgrokTunnel(),
 		newWebhook(),
-		newBot(),
+		newBotManager(),
 		newBluetooth(),
-		newMessage(),
+		// newMessage(),
 		newGracefulShutdown(),
 	}
 
@@ -96,19 +99,13 @@ func (a *App) init(ctx context.Context) error {
 
 func (a *App) handleUpdate(_ http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		log.Println("not POST update method")
+		helper.Logln("not POST update method")
 		return
 	}
 
-	var update tgbotapi.Update
-	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
-		log.Printf("decode: %s\n", err.Error())
-		return
-	}
-
-	a.updateCh <- &update
+	a.mediator.updateCh <- r.Body
 }
 
 func closeLog(name string) {
-	log.Printf("graceful shutdown of module '%s'\n", name)
+	helper.Logln(fmt.Sprintf("graceful shutdown of module '%s'", name))
 }

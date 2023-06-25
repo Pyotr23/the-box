@@ -3,9 +3,9 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 
 	hardware "github.com/Pyotr23/the-box/internal/bluetooth"
+	"github.com/Pyotr23/the-box/internal/helper"
 	"github.com/Pyotr23/the-box/internal/rfcomm"
 )
 
@@ -47,7 +47,7 @@ func (b *bluetooth) Init(ctx context.Context, mediator *mediator) error {
 }
 
 func (*bluetooth) SuccessLog() {
-	log.Println("init hc-06")
+	helper.Logln("init hc-06")
 }
 
 func (b *bluetooth) Close(ctx context.Context) error {

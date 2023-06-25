@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/Pyotr23/the-box/internal/helper"
 )
 
 const (
@@ -41,7 +42,7 @@ func (w *webhook) Init(ctx context.Context, mediator *mediator) error {
 		return fmt.Errorf("empty bot token environment %s", botTokenEnv)
 	}
 
-	url := fmt.Sprintf(setWebhookFormat, token, mediator.tunnel.URL())
+	url := fmt.Sprintf(setWebhookFormat, token, mediator.tunnel.Addr().String())
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("set webhook: %w", err)
@@ -64,7 +65,7 @@ func (w *webhook) Init(ctx context.Context, mediator *mediator) error {
 }
 
 func (w *webhook) SuccessLog() {
-	log.Println(w.description)
+	helper.Logln(w.description)
 }
 
 func (*webhook) Close(ctx context.Context) error {

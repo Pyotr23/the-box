@@ -2,10 +2,11 @@ package app
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/Pyotr23/the-box/internal/helper"
 )
 
 const gracefulShutdownName = "graceful shutdown"
@@ -16,13 +17,13 @@ type gracefulShutdown struct {
 }
 
 func newGracefulShutdown() *gracefulShutdown {
-	return &gracefulShutdown{
-		signalCh: make(chan os.Signal, 1),
-		runCh:    make(chan struct{}),
-	}
+	return &gracefulShutdown{}
 }
 
-func (gs *gracefulShutdown) Init(ctx context.Context, mediator *mediator) error {
+func (gs *gracefulShutdown) Init(_ context.Context, mediator *mediator) error {
+	gs.signalCh = make(chan os.Signal, 1)
+	gs.runCh = make(chan struct{})
+
 	go func() {
 		signal.Notify(gs.signalCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
@@ -37,7 +38,7 @@ func (gs *gracefulShutdown) Init(ctx context.Context, mediator *mediator) error 
 }
 
 func (*gracefulShutdown) SuccessLog() {
-	log.Println("setup graceful shutdown")
+	helper.Logln("setup graceful shutdown")
 }
 
 func (gs *gracefulShutdown) Close(ctx context.Context) error {
@@ -46,7 +47,7 @@ func (gs *gracefulShutdown) Close(ctx context.Context) error {
 }
 
 func (gs *gracefulShutdown) CloseLog() {
-	log.Println("start graceful shutdown")
+	helper.Logln("start graceful shutdown")
 }
 
 func (*gracefulShutdown) Name() string {

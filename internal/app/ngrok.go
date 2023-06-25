@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/Pyotr23/the-box/internal/helper"
 	"golang.ngrok.com/ngrok"
 	"golang.ngrok.com/ngrok/config"
 )
@@ -39,7 +39,7 @@ func (nt *ngrokTunnel) Init(ctx context.Context, mediator *mediator) error {
 }
 
 func (nt *ngrokTunnel) SuccessLog() {
-	log.Printf("tunnel URL %s\n", nt.tunnel.URL())
+	helper.Logln(fmt.Sprintf("tunnel URL %s", nt.tunnel.URL()))
 }
 
 func (nt *ngrokTunnel) Close(ctx context.Context) error {
