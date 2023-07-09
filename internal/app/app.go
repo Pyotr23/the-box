@@ -77,9 +77,9 @@ func (a *App) Exit(ctx context.Context) {
 
 func (a *App) init(ctx context.Context) error {
 	a.modules = []module{
-		newNgrokTunnel(),
-		newWebhook(),
-		newBotManager(),
+		// newNgrokTunnel(),
+		// newWebhook(),
+		// newBotManager(),
 		newBluetooth(),
 		// newMessage(),
 		newGracefulShutdown(),

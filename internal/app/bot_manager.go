@@ -15,10 +15,12 @@ import (
 const botName = "bot manager"
 
 type botManager struct {
-	api          *tgbotapi.BotAPI
-	bodyCh       chan io.ReadCloser
-	inputTextCh  chan model.TextChatID
-	outputTextCh chan model.TextChatID
+	api             *tgbotapi.BotAPI
+	bodyCh          chan io.ReadCloser
+	inputTextCh     chan model.TextChatID
+	outputTextCh    chan model.TextChatID
+	waitInputTextCh chan struct{}
+	userMessageCh   chan string
 
 	// inputMessageCh  chan model.Message
 	// outputMessageCh chan model.Message
@@ -52,13 +54,34 @@ func (b *botManager) Init(ctx context.Context, mediator *mediator) (err error) {
 
 	b.inputTextCh = make(chan model.TextChatID)
 	b.outputTextCh = make(chan model.TextChatID)
+	b.waitInputTextCh = make(chan struct{})
+	b.userMessageCh = make(chan string)
 
 	// a.inputMessageCh = b.inputMessageCh
 	// a.outputMessageCh = b.outputMessageCh
 
 	go func() {
 		for readCloser := range b.bodyCh {
-			b.processBody(readCloser)
+			update, err := decode(readCloser)
+			if err != nil {
+				helper.Logln(err.Error())
+				return
+			}
+
+			if update == nil {
+				helper.Logln("nil update")
+				return
+			}
+
+			if update.Message != nil {
+				// select {
+				// case <-b.waitInputTextCh:
+				// 	b.userMessageCh <- update.Message.Text
+				// default:
+				// 	break
+				// }
+
+			}
 		}
 	}()
 
@@ -88,6 +111,21 @@ func (b *botManager) Close(ctx context.Context) error {
 
 func (*botManager) CloseLog() {
 	closeLog(botName)
+}
+
+func decode(readCloser io.ReadCloser) (*tgbotapi.Update, error) {
+	defer func() {
+		if err := readCloser.Close(); err != nil {
+			helper.Logln(fmt.Sprintf("close body: %s", err.Error()))
+		}
+	}()
+
+	var update *tgbotapi.Update
+	if err := json.NewDecoder(readCloser).Decode(update); err != nil {
+		return nil, fmt.Errorf("decode: %w", err)
+	}
+
+	return update, nil
 }
 
 func (b *botManager) processBody(body io.ReadCloser) {

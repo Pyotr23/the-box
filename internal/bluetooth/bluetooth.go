@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
+	"github.com/Pyotr23/the-box/internal/helper"
 	bl "tinygo.org/x/bluetooth"
 )
 
@@ -17,13 +17,13 @@ const (
 )
 
 func GetMACAddress() (string, error) {
-	ba := bl.DefaultAdapter
-	err := ba.Enable()
+	adapter := bl.DefaultAdapter
+	err := adapter.Enable()
 	if err != nil {
 		return "", fmt.Errorf("adapter enable: %w", err)
 	}
 
-	mac, err := getScanResult(ba)
+	mac, err := getScanResult(adapter)
 	if err != nil {
 		return "", fmt.Errorf("scan: %w", err)
 	}
@@ -36,24 +36,29 @@ func GetMACAddress() (string, error) {
 	return mac, nil
 }
 
-func getScanResult(ba *bl.Adapter) (mac string, err error) {
+func getScanResult(adapter *bl.Adapter) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), maxScanDuration)
 	defer cancel()
 
-	err = ba.Scan(func(adapter *bl.Adapter, device bl.ScanResult) {
+	helper.Logln(fmt.Sprintf("scanning for '%s'...", deviceName))
+
+	go func() {
 		select {
 		case <-ctx.Done():
 			adapter.StopScan()
-		default:
-			if !strings.Contains(device.LocalName(), deviceName) {
-				return
-			}
-
-			mac = device.Address.String()
-			adapter.StopScan()
-
-			return
 		}
+	}()
+
+	var macs []string
+	err := adapter.Scan(func(adapter *bl.Adapter, device bl.ScanResult) {
+		// if !strings.Contains(device.LocalName(), deviceName) {
+		// 	return
+		// }
+
+		macs = append(macs, device.LocalName()) // device.Address.String())
 	})
-	return
+
+	helper.Logln(fmt.Sprintf("founded %s - %v", deviceName, macs))
+
+	return "", err
 }
