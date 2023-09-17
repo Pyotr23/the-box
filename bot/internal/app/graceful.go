@@ -2,14 +2,18 @@ package app
 
 import (
 	"context"
+	"errors"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/Pyotr23/the-box/internal/helper"
 )
 
 const gracefulShutdownName = "graceful shutdown"
+
+type shutdownStartChSetter interface {
+	setShutdownStartChannel(ch chan struct{})
+}
 
 type gracefulShutdown struct {
 	signalCh chan os.Signal
@@ -20,7 +24,12 @@ func newGracefulShutdown() *gracefulShutdown {
 	return &gracefulShutdown{}
 }
 
-func (gs *gracefulShutdown) Init(_ context.Context, mediator *mediator) error {
+func (gs *gracefulShutdown) Init(_ context.Context, app interface{}) error {
+	setter, ok := app.(shutdownStartChSetter)
+	if !ok {
+		return errors.New("app not implements shutdown start channel setter")
+	}
+
 	gs.signalCh = make(chan os.Signal, 1)
 	gs.runCh = make(chan struct{})
 
@@ -32,13 +41,13 @@ func (gs *gracefulShutdown) Init(_ context.Context, mediator *mediator) error {
 		close(gs.runCh)
 	}()
 
-	mediator.shutdownStartCh = gs.runCh
+	setter.setShutdownStartChannel(gs.runCh)
 
 	return nil
 }
 
 func (*gracefulShutdown) SuccessLog() {
-	helper.Logln("setup graceful shutdown")
+	log.Print("setup graceful shutdown")
 }
 
 func (gs *gracefulShutdown) Close(ctx context.Context) error {
@@ -47,7 +56,7 @@ func (gs *gracefulShutdown) Close(ctx context.Context) error {
 }
 
 func (gs *gracefulShutdown) CloseLog() {
-	helper.Logln("start graceful shutdown")
+	log.Print("start graceful shutdown")
 }
 
 func (*gracefulShutdown) Name() string {

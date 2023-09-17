@@ -4,20 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 
-	"github.com/Pyotr23/the-box/internal/helper"
-	"github.com/Pyotr23/the-box/internal/rfcomm"
-)
-
-const (
-	botTokenEnv = "THEBOX_BOTTOKEN"
+	b "github.com/Pyotr23/the-box/bot/internal/client/bluetooth"
 )
 
 type module interface {
 	Name() string
-	Init(ctx context.Context, mediator *mediator) error
+	Init(ctx context.Context, app interface{}) error
 	SuccessLog()
 	Close(ctx context.Context) error
 	CloseLog()
@@ -25,21 +21,17 @@ type module interface {
 
 type (
 	mediator struct {
-		tunnel          net.Listener
-		sockets         []rfcomm.Socket
+		// tunnel          net.Listener
 		shutdownStartCh chan struct{}
 		updateCh        chan io.ReadCloser
+		bluetoothClient b.BluetoothClient
 	}
 
 	App struct {
-		modules  []module
-		mediator *mediator
-		// tunnel          ngrok.Tunnel
-		// sockets         []rfcomm.Socket
-		// shutdownStart   chan struct{}
-		// updateCh        chan *tgbotapi.Update
-		// inputMessageCh  chan model.Message
-		// outputMessageCh chan model.Message
+		modules         []module
+		mediator        *mediator
+		tunnel          net.Listener
+		shutdownStartCh chan struct{}
 	}
 )
 
@@ -51,13 +43,13 @@ func NewApp(ctx context.Context) (*App, error) {
 }
 
 func (a *App) Run(ctx context.Context) (chan struct{}, chan error) {
-	helper.Logln("run app")
+	log.Println("run app")
 
 	errCh := make(chan error)
 
-	go func() {
-		errCh <- http.Serve(a.mediator.tunnel, http.HandlerFunc(a.handleUpdate))
-	}()
+	// go func() {
+	// 	errCh <- http.Serve(a.mediator.tunnel, http.HandlerFunc(a.handleUpdate))
+	// }()
 
 	return a.mediator.shutdownStartCh, errCh
 }
@@ -67,7 +59,7 @@ func (a *App) Exit(ctx context.Context) {
 		m := a.modules[i]
 
 		if err := m.Close(ctx); err != nil {
-			helper.Logln(fmt.Sprintf("failed graceful shutdown of module '%s'", m.Name()))
+			log.Print(fmt.Sprintf("failed graceful shutdown of module '%s'\n", m.Name()))
 			continue
 		}
 
@@ -75,18 +67,30 @@ func (a *App) Exit(ctx context.Context) {
 	}
 }
 
+func (a *App) setTunnel(tunnel net.Listener) {
+	a.tunnel = tunnel
+}
+
+func (a *App) getTunnel() net.Listener {
+	return a.tunnel
+}
+
+func (a *App) setShutdownStartChannel(ch chan struct{}) {
+	a.shutdownStartCh = ch
+}
+
 func (a *App) init(ctx context.Context) error {
 	a.modules = []module{
-		// newNgrokTunnel(),
-		// newWebhook(),
+		newNgrokTunnel(),
+		newWebhook(),
 		// newBotManager(),
-		newBluetooth(),
+		// newBluetoothClient(),
 		// newMessage(),
 		newGracefulShutdown(),
 	}
 
 	for _, module := range a.modules {
-		err := module.Init(ctx, a.mediator)
+		err := module.Init(ctx, a)
 		if err != nil {
 			return err
 		}
@@ -99,7 +103,7 @@ func (a *App) init(ctx context.Context) error {
 
 func (a *App) handleUpdate(_ http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		helper.Logln("not POST update method")
+		log.Print("not POST update method")
 		return
 	}
 
@@ -107,5 +111,5 @@ func (a *App) handleUpdate(_ http.ResponseWriter, r *http.Request) {
 }
 
 func closeLog(name string) {
-	helper.Logln(fmt.Sprintf("graceful shutdown of module '%s'", name))
+	log.Print(fmt.Sprintf("graceful shutdown of module '%s'\n", name))
 }

@@ -3,18 +3,24 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/Pyotr23/the-box/internal/helper"
 )
 
 const (
 	webhookName      = "webhook"
+	botTokenEnv      = "THEBOX_BOTTOKEN"
 	setWebhookFormat = "https://api.telegram.org/bot%s/setWebhook?url=%s/api/v1/update"
 )
+
+type tunnelGetter interface {
+	getTunnel() net.Listener
+}
 
 type (
 	webhook struct {
@@ -36,13 +42,18 @@ func (*webhook) Name() string {
 	return webhookName
 }
 
-func (w *webhook) Init(ctx context.Context, mediator *mediator) error {
-	token := os.Getenv(botTokenEnv)
-	if token == "" {
-		return fmt.Errorf("empty bot token environment %s", botTokenEnv)
+func (w *webhook) Init(ctx context.Context, app interface{}) error {
+	tg, ok := app.(tunnelGetter)
+	if !ok {
+		return errors.New("app not implements tunnel getter")
 	}
 
-	url := fmt.Sprintf(setWebhookFormat, token, mediator.tunnel.Addr().String())
+	token, err := getToken()
+	if err != nil {
+		return fmt.Errorf("get token: %w", err)
+	}
+
+	url := fmt.Sprintf(setWebhookFormat, token, tg.getTunnel().Addr().String())
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("set webhook: %w", err)
@@ -65,7 +76,7 @@ func (w *webhook) Init(ctx context.Context, mediator *mediator) error {
 }
 
 func (w *webhook) SuccessLog() {
-	helper.Logln(w.description)
+	log.Print(w.description)
 }
 
 func (*webhook) Close(ctx context.Context) error {
@@ -74,4 +85,12 @@ func (*webhook) Close(ctx context.Context) error {
 
 func (*webhook) CloseLog() {
 	closeLog(webhookName)
+}
+
+func getToken() (string, error) {
+	token := os.Getenv(botTokenEnv)
+	if token == "" {
+		return "", fmt.Errorf("empty bot token environment %s", botTokenEnv)
+	}
+	return token, nil
 }

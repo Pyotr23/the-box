@@ -2,14 +2,20 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
+	"net"
 
-	"github.com/Pyotr23/the-box/internal/helper"
 	"golang.ngrok.com/ngrok"
 	"golang.ngrok.com/ngrok/config"
 )
 
 const ngrokTunnelName = "ngrok tunnel"
+
+type tunnelSetter interface {
+	setTunnel(tunnel net.Listener)
+}
 
 type ngrokTunnel struct {
 	tunnel ngrok.Tunnel
@@ -23,7 +29,12 @@ func (*ngrokTunnel) Name() string {
 	return ngrokTunnelName
 }
 
-func (nt *ngrokTunnel) Init(ctx context.Context, mediator *mediator) error {
+func (nt *ngrokTunnel) Init(ctx context.Context, app interface{}) error {
+	ts, ok := app.(tunnelSetter)
+	if !ok {
+		return errors.New("app not implements tunnel setter")
+	}
+
 	var err error
 	nt.tunnel, err = ngrok.Listen(context.Background(),
 		config.HTTPEndpoint(),
@@ -33,13 +44,13 @@ func (nt *ngrokTunnel) Init(ctx context.Context, mediator *mediator) error {
 		return fmt.Errorf("ngrok listen: %w", err)
 	}
 
-	mediator.tunnel = nt.tunnel
+	ts.setTunnel(nt.tunnel)
 
 	return nil
 }
 
 func (nt *ngrokTunnel) SuccessLog() {
-	helper.Logln(fmt.Sprintf("tunnel URL %s", nt.tunnel.URL()))
+	log.Printf("tunnel URL %s", nt.tunnel.URL())
 }
 
 func (nt *ngrokTunnel) Close(ctx context.Context) error {
