@@ -1,4 +1,4 @@
-module github.com/Pyotr23/the-box
+module github.com/Pyotr23/the-box/bot
 
 go 1.20
 

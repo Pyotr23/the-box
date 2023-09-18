@@ -10,14 +10,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	maclient "github.com/Pyotr23/the-box/bluetooth-api/internal/client/mac_address"
+	client "github.com/Pyotr23/the-box/bluetooth-api/internal/client/mac_address"
 	pb "github.com/Pyotr23/the-box/bluetooth-api/pkg/pb/bluetooth"
-	common "github.com/Pyotr23/the-box/common/pkg/config"
+	"github.com/Pyotr23/the-box/common/pkg/config"
 	"google.golang.org/grpc"
 )
 
 type Implementation struct {
-	MacAddressClient maclient.MacAddressClient
+	MacAddressClient client.MacAddressClient
 	pb.UnimplementedBluetoothServer
 }
 
@@ -65,12 +65,10 @@ func NewApp() (*App, error) {
 }
 
 func getListener() (net.Listener, error) {
-	cfg, err := common.GetBlutoothApiConfig()
+	port, err := config.GetBluetoothApiPort()
 	if err != nil {
-		return nil, fmt.Errorf("get api config: %w", err)
+		return nil, fmt.Errorf("get api port: %w", err)
 	}
-
-	port := cfg.Port
 	if port == 0 {
 		return nil, errors.New("empty api port")
 	}
