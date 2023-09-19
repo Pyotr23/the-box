@@ -2,22 +2,54 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/Pyotr23/the-box/common/pkg/model"
 	yaml "gopkg.in/yaml.v3"
 )
 
-func GetBluetoothApiPort() (int, error) {
-	bs, err := os.ReadFile("./config/config.yaml")
+var (
+	cfg  model.Config
+	path string
+)
+
+func init() {
+	var err error
+	path, err = filepath.Abs("./config/config.yaml")
 	if err != nil {
-		return 0, fmt.Errorf("read file: %w", err)
+		log.Printf("abs: %s", err)
+		return
 	}
 
-	var cfg model.Config
+	bs, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Printf("read file: %s", err)
+		return
+	}
+
 	if err = yaml.Unmarshal(bs, &cfg); err != nil {
-		return 0, fmt.Errorf("unmarshal: %w", err)
+		log.Printf("unmarshal: %s", err)
+		return
 	}
+}
 
-	return cfg.BluetoothApiCOnfig.Port, nil
+func GetBluetoothApiPort() (int, error) {
+	// path, err := filepath.Abs("./config/config.yaml")
+	fmt.Println(path)
+	// if err != nil {
+	// 	return 0, fmt.Errorf("abs: %w", err)
+	// }
+
+	// bs, err := os.ReadFile(path)
+	// if err != nil {
+	// 	return 0, fmt.Errorf("read file: %w", err)
+	// }
+
+	// if err = yaml.Unmarshal(bs, &cfg); err != nil {
+	// 	return 0, fmt.Errorf("unmarshal: %w", err)
+	// }
+
+	return 5001, nil
 }

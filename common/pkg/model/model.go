@@ -1,7 +1,7 @@
 package model
 
 type Config struct {
-	BluetoothApiCOnfig BluetoothApiConfig `yaml:"bluetooth-api"`
+	BluetoothApiConfig BluetoothApiConfig `yaml:"bluetooth-api"`
 }
 
 type BluetoothApiConfig struct {
