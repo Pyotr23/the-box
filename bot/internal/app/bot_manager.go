@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/Pyotr23/the-box/internal/helper"
-	"github.com/Pyotr23/the-box/internal/model"
+	"github.com/Pyotr23/the-box/bot/internal/helper"
+	"github.com/Pyotr23/the-box/bot/internal/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 

@@ -3,7 +3,7 @@ package handler
 import (
 	"errors"
 
-	"github.com/Pyotr23/the-box/internal/handler/model"
+	"github.com/Pyotr23/the-box/bot/internal/model"
 )
 
 type UnknownHandler struct {
@@ -12,7 +12,7 @@ type UnknownHandler struct {
 
 func NewUnknownHandler(c model.Info) UnknownHandler {
 	return UnknownHandler{
-		base: newBaseHandler(c.ChatID, c.OutputTextCh),
+		// base: newBaseHandler(c.ChatID, c.OutputTextCh),
 	}
 }
 

@@ -23,12 +23,7 @@ type Client struct {
 }
 
 func NewClient() (Client, error) {
-	cfg, err := common.GetBlutoothApiConfig()
-	if err != nil {
-		return Client{}, fmt.Errorf("get bluetooth api config: %w", err)
-	}
-
-	port := cfg.Port
+	port, err := common.GetBluetoothApiPort()
 	if port == 0 {
 		return Client{}, errors.New("empty port")
 	}

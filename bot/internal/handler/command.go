@@ -3,9 +3,9 @@ package handler
 import (
 	"fmt"
 
-	"github.com/Pyotr23/the-box/internal/enum"
-	"github.com/Pyotr23/the-box/internal/handler/model"
-	"github.com/Pyotr23/the-box/internal/rfcomm"
+	"github.com/Pyotr23/the-box/bot/internal/enum"
+	"github.com/Pyotr23/the-box/bot/internal/model"
+	"github.com/Pyotr23/the-box/bot/internal/rfcomm"
 )
 
 type Command struct {
@@ -16,7 +16,7 @@ type Command struct {
 
 func NewCommand(c model.Info) Command {
 	return Command{
-		base:   newBaseHandler(c.ChatID, c.OutputTextCh),
+		// base:   newBaseHandler(c.ChatID, c.OutputTextCh),
 		code:   c.Code,
 		socket: c.Socket,
 	}

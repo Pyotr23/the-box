@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	hardware "github.com/Pyotr23/the-box/internal/bluetooth"
-	"github.com/Pyotr23/the-box/internal/helper"
-	"github.com/Pyotr23/the-box/internal/rfcomm"
+	hardware "github.com/Pyotr23/the-box/bot/internal/bluetooth"
+	"github.com/Pyotr23/the-box/bot/internal/helper"
+	"github.com/Pyotr23/the-box/bot/internal/rfcomm"
 )
 
 const bluetoothName = "bluetooth"
@@ -41,7 +41,7 @@ func (b *bluetooth) Init(ctx context.Context, mediator *mediator) error {
 
 	b.sockets = append(b.sockets, socket)
 
-	mediator.sockets = b.sockets
+	// mediator.sockets = b.sockets
 
 	return nil
 }

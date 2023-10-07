@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Pyotr23/the-box/internal/enum"
-	"github.com/Pyotr23/the-box/internal/handler/model"
-	"github.com/Pyotr23/the-box/internal/rfcomm"
+	"github.com/Pyotr23/the-box/bot/internal/enum"
+	"github.com/Pyotr23/the-box/bot/internal/model"
+	"github.com/Pyotr23/the-box/bot/internal/rfcomm"
 )
 
 type QueryHandler struct {
@@ -17,7 +17,7 @@ type QueryHandler struct {
 
 func NewQueryHandler(c model.Info) QueryHandler {
 	return QueryHandler{
-		base:   newBaseHandler(c.ChatID, c.OutputTextCh),
+		// base:   newBaseHandler(c.ChatID, c.OutputTextCh),
 		code:   c.Code,
 		socket: c.Socket,
 	}

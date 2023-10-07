@@ -1,6 +1,6 @@
 module github.com/Pyotr23/the-box/bot
 
-go 1.20
+go 1.21
 
 require github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 

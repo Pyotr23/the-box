@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/Pyotr23/the-box/internal/app"
+	"github.com/Pyotr23/the-box/bot/internal/app"
 )
 
 type IApp interface {

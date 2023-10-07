@@ -7,7 +7,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/Pyotr23/the-box/internal/enum"
+	"github.com/Pyotr23/the-box/bot/internal/enum"
 	"golang.org/x/sys/unix"
 )
 

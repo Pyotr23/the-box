@@ -1,8 +1,8 @@
 package model
 
 import (
-	"github.com/Pyotr23/the-box/internal/enum"
-	"github.com/Pyotr23/the-box/internal/rfcomm"
+	"github.com/Pyotr23/the-box/bot/internal/enum"
+	"github.com/Pyotr23/the-box/bot/internal/rfcomm"
 )
 
 type TextChatID struct {

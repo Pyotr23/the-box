@@ -1,6 +1,6 @@
 module github.com/Pyotr23/the-box/bluetooth-api
 
-go 1.20
+go 1.21
 
 require google.golang.org/grpc v1.58.1
 

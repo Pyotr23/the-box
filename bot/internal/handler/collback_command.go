@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Pyotr23/the-box/internal/enum"
-	"github.com/Pyotr23/the-box/internal/handler/model"
-	"github.com/Pyotr23/the-box/internal/rfcomm"
+	"github.com/Pyotr23/the-box/bot/internal/enum"
+	"github.com/Pyotr23/the-box/bot/internal/model"
+	"github.com/Pyotr23/the-box/bot/internal/rfcomm"
 )
 
 const (
@@ -35,7 +35,7 @@ type baseCallbackCommand struct {
 
 func NewBaseCallbackCommand(c model.Info, inputCh <-chan string, waitInputCh chan struct{}, textForUser string) baseCallbackCommand {
 	return baseCallbackCommand{
-		baseHandler: newBaseHandler(c.ChatID, c.OutputTextCh),
+		// baseHandler: newBaseHandler(c.ChatID, c.OutputTextCh),
 		code:        c.Code,
 		socket:      c.Socket,
 		inputCh:     inputCh,

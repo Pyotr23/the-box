@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/Pyotr23/the-box/internal/helper"
+	"github.com/Pyotr23/the-box/bot/internal/helper"
 	bl "tinygo.org/x/bluetooth"
 )
 
