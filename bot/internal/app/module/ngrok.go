@@ -1,4 +1,4 @@
-package app
+package module
 
 import (
 	"context"
@@ -14,14 +14,14 @@ import (
 const ngrokTunnelName = "ngrok tunnel"
 
 type tunnelSetter interface {
-	setTunnel(tunnel net.Listener)
+	SetTunnel(tunnel net.Listener)
 }
 
 type ngrokTunnel struct {
 	tunnel ngrok.Tunnel
 }
 
-func newNgrokTunnel() *ngrokTunnel {
+func NewNgrokTunnel() *ngrokTunnel {
 	return &ngrokTunnel{}
 }
 
@@ -29,7 +29,7 @@ func (*ngrokTunnel) Name() string {
 	return ngrokTunnelName
 }
 
-func (nt *ngrokTunnel) Init(ctx context.Context, app interface{}) error {
+func (nt *ngrokTunnel) Init(ctx context.Context, app any) error {
 	ts, ok := app.(tunnelSetter)
 	if !ok {
 		return errors.New("app not implements tunnel setter")
@@ -44,7 +44,7 @@ func (nt *ngrokTunnel) Init(ctx context.Context, app interface{}) error {
 		return fmt.Errorf("ngrok listen: %w", err)
 	}
 
-	ts.setTunnel(nt.tunnel)
+	ts.SetTunnel(nt.tunnel)
 
 	return nil
 }
@@ -58,5 +58,5 @@ func (nt *ngrokTunnel) Close(ctx context.Context) error {
 }
 
 func (*ngrokTunnel) CloseLog() {
-	closeLog(ngrokTunnelName)
+	log.Print(fmt.Sprintf("graceful shutdown of module '%s'", ngrokTunnelName))
 }

@@ -1,4 +1,4 @@
-package app
+package module
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -18,8 +17,8 @@ const (
 	setWebhookFormat = "https://api.telegram.org/bot%s/setWebhook?url=%s/api/v1/update"
 )
 
-type tunnelGetter interface {
-	getTunnel() net.Listener
+type addrGetter interface {
+	GetAddr() string
 }
 
 type (
@@ -34,7 +33,7 @@ type (
 	}
 )
 
-func newWebhook() *webhook {
+func NewWebhook() *webhook {
 	return &webhook{}
 }
 
@@ -42,8 +41,8 @@ func (*webhook) Name() string {
 	return webhookName
 }
 
-func (w *webhook) Init(ctx context.Context, app interface{}) error {
-	tg, ok := app.(tunnelGetter)
+func (w *webhook) Init(ctx context.Context, app any) error {
+	tg, ok := app.(addrGetter)
 	if !ok {
 		return errors.New("app not implements tunnel getter")
 	}
@@ -53,7 +52,7 @@ func (w *webhook) Init(ctx context.Context, app interface{}) error {
 		return fmt.Errorf("get token: %w", err)
 	}
 
-	url := fmt.Sprintf(setWebhookFormat, token, tg.getTunnel().Addr().String())
+	url := fmt.Sprintf(setWebhookFormat, token, tg.GetAddr())
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("set webhook: %w", err)
@@ -84,7 +83,7 @@ func (*webhook) Close(ctx context.Context) error {
 }
 
 func (*webhook) CloseLog() {
-	closeLog(webhookName)
+	log.Print(fmt.Sprintf("graceful shutdown of module '%s'", webhookName))
 }
 
 func getToken() (string, error) {

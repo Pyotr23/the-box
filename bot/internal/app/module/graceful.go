@@ -1,4 +1,4 @@
-package app
+package module
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 const gracefulShutdownName = "graceful shutdown"
 
 type shutdownStartChSetter interface {
-	setShutdownStartChannel(ch chan struct{})
+	SetShutdownStartChannel(ch chan struct{})
 }
 
 type gracefulShutdown struct {
@@ -20,11 +20,11 @@ type gracefulShutdown struct {
 	runCh    chan struct{}
 }
 
-func newGracefulShutdown() *gracefulShutdown {
+func NewGracefulShutdown() *gracefulShutdown {
 	return &gracefulShutdown{}
 }
 
-func (gs *gracefulShutdown) Init(_ context.Context, app interface{}) error {
+func (gs *gracefulShutdown) Init(_ context.Context, app any) error {
 	setter, ok := app.(shutdownStartChSetter)
 	if !ok {
 		return errors.New("app not implements shutdown start channel setter")
@@ -41,7 +41,7 @@ func (gs *gracefulShutdown) Init(_ context.Context, app interface{}) error {
 		close(gs.runCh)
 	}()
 
-	setter.setShutdownStartChannel(gs.runCh)
+	setter.SetShutdownStartChannel(gs.runCh)
 
 	return nil
 }

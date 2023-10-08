@@ -1,64 +1,64 @@
 package app
 
-import (
-	"context"
-	"fmt"
+// import (
+// 	"context"
+// 	"fmt"
 
-	hardware "github.com/Pyotr23/the-box/bot/internal/bluetooth"
-	"github.com/Pyotr23/the-box/bot/internal/helper"
-	"github.com/Pyotr23/the-box/bot/internal/rfcomm"
-)
+// 	hardware "github.com/Pyotr23/the-box/bot/internal/bluetooth"
+// 	"github.com/Pyotr23/the-box/bot/internal/helper"
+// 	"github.com/Pyotr23/the-box/bot/internal/rfcomm"
+// )
 
-const bluetoothName = "bluetooth"
+// const bluetoothName = "bluetooth"
 
-type bluetooth struct {
-	sockets []rfcomm.Socket
-}
+// type bluetooth struct {
+// 	sockets []rfcomm.Socket
+// }
 
-func newBluetooth() *bluetooth {
-	return &bluetooth{}
-}
+// func newBluetooth() *bluetooth {
+// 	return &bluetooth{}
+// }
 
-func (*bluetooth) Name() string {
-	return bluetoothName
-}
+// func (*bluetooth) Name() string {
+// 	return bluetoothName
+// }
 
-func (b *bluetooth) Init(ctx context.Context, mediator *mediator) error {
-	mac, err := hardware.GetMACAddress()
-	if err != nil {
-		return fmt.Errorf("get mac address: %w", err)
-	}
+// func (b *bluetooth) Init(ctx context.Context, mediator *mediator) error {
+// 	mac, err := hardware.GetMACAddress()
+// 	if err != nil {
+// 		return fmt.Errorf("get mac address: %w", err)
+// 	}
 
-	socket, err := rfcomm.NewSocket()
-	if err != nil {
-		return fmt.Errorf("new socket: %w", err)
-	}
+// 	socket, err := rfcomm.NewSocket()
+// 	if err != nil {
+// 		return fmt.Errorf("new socket: %w", err)
+// 	}
 
-	err = socket.Connect(mac)
-	if err != nil {
-		return fmt.Errorf("socket connect: %w", err)
-	}
+// 	err = socket.Connect(mac)
+// 	if err != nil {
+// 		return fmt.Errorf("socket connect: %w", err)
+// 	}
 
-	b.sockets = append(b.sockets, socket)
+// 	b.sockets = append(b.sockets, socket)
 
-	// mediator.sockets = b.sockets
+// 	// mediator.sockets = b.sockets
 
-	return nil
-}
+// 	return nil
+// }
 
-func (*bluetooth) SuccessLog() {
-	helper.Logln("init hc-06")
-}
+// func (*bluetooth) SuccessLog() {
+// 	helper.Logln("init hc-06")
+// }
 
-func (b *bluetooth) Close(ctx context.Context) error {
-	for _, socket := range b.sockets {
-		if err := socket.Close(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// func (b *bluetooth) Close(ctx context.Context) error {
+// 	for _, socket := range b.sockets {
+// 		if err := socket.Close(); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
 
-func (*bluetooth) CloseLog() {
-	closeLog(bluetoothName)
-}
+// func (*bluetooth) CloseLog() {
+// 	closeLog(bluetoothName)
+// }
