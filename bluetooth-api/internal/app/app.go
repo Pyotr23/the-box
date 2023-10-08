@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -11,8 +10,8 @@ import (
 	"syscall"
 
 	client "github.com/Pyotr23/the-box/bluetooth-api/internal/client/mac_address"
-	"github.com/Pyotr23/the-box/bluetooth-api/internal/config"
 	pb "github.com/Pyotr23/the-box/bluetooth-api/pkg/pb/bluetooth"
+	common "github.com/Pyotr23/the-box/common/pkg/config"
 	"google.golang.org/grpc"
 )
 
@@ -65,12 +64,9 @@ func NewApp() (*App, error) {
 }
 
 func getListener() (net.Listener, error) {
-	port, err := config.GetPort()
+	port, err := common.GetBluetoothApiPort()
 	if err != nil {
 		return nil, fmt.Errorf("get port: %w", err)
-	}
-	if port == 0 {
-		return nil, errors.New("empty api port")
 	}
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
