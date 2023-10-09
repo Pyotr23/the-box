@@ -3,8 +3,10 @@ package app
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 
 	"github.com/Pyotr23/the-box/bot/internal/app/module"
 )
@@ -22,6 +24,7 @@ type (
 		modules         []appModule
 		tunnel          net.Listener
 		shutdownStartCh chan struct{}
+		updateCh        chan io.ReadCloser
 	}
 )
 
@@ -35,9 +38,9 @@ func (a *App) Run(ctx context.Context) (chan struct{}, chan error) {
 
 	errCh := make(chan error)
 
-	// go func() {
-	// 	errCh <- http.Serve(a.mediator.tunnel, http.HandlerFunc(a.handleUpdate))
-	// }()
+	go func() {
+		errCh <- http.Serve(a.tunnel, http.HandlerFunc(a.handleUpdate))
+	}()
 
 	return a.shutdownStartCh, errCh
 }
@@ -53,6 +56,10 @@ func (a *App) Exit(ctx context.Context) {
 
 		m.CloseLog()
 	}
+}
+
+func (a *App) SetUpdateChannel(ch chan io.ReadCloser) {
+	a.updateCh = ch
 }
 
 func (a *App) SetTunnel(tunnel net.Listener) {
@@ -71,7 +78,7 @@ func (a *App) init(ctx context.Context) error {
 	a.modules = []appModule{
 		module.NewNgrokTunnel(),
 		module.NewWebhook(),
-		// newBotManager(),
+		module.NewBotManager(),
 		// newBluetoothClient(),
 		// newMessage(),
 		module.NewGracefulShutdown(),
@@ -89,11 +96,11 @@ func (a *App) init(ctx context.Context) error {
 	return nil
 }
 
-// func (a *App) handleUpdate(_ http.ResponseWriter, r *http.Request) {
-// 	if r.Method != http.MethodPost {
-// 		log.Print("not POST update method")
-// 		return
-// 	}
+func (a *App) handleUpdate(_ http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		log.Print("not POST update method")
+		return
+	}
 
-// 	a.mediator.updateCh <- r.Body
-// }
+	a.updateCh <- r.Body
+}

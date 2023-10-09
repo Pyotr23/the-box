@@ -50,7 +50,7 @@ func (*gracefulShutdown) SuccessLog() {
 	log.Print("setup graceful shutdown")
 }
 
-func (gs *gracefulShutdown) Close(ctx context.Context) error {
+func (gs *gracefulShutdown) Close(_ context.Context) error {
 	close(gs.signalCh)
 	return nil
 }
