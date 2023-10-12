@@ -10,7 +10,7 @@ import (
 	bt "tinygo.org/x/bluetooth"
 )
 
-const maxScanDuration = time.Second * 5
+const maxScanDuration = time.Second * 3
 
 type MacAddressClient interface {
 	GetAddressesByNameMap(deviceNames []string) (map[string][]string, error)

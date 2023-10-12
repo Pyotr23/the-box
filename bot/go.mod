@@ -12,6 +12,7 @@ require (
 	github.com/inconshreveable/log15 v3.0.0-testing.3+incompatible // indirect
 	github.com/inconshreveable/log15/v3 v3.0.0-testing.5 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
+	github.com/looplab/fsm v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/muka/go-bluetooth v0.0.0-20220830075246-0746e3a1ea53 // indirect

@@ -2,24 +2,38 @@ package module
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 
+	bc "github.com/Pyotr23/the-box/bot/internal/client/bluetooth"
+	"github.com/Pyotr23/the-box/bot/internal/helper"
+	"github.com/Pyotr23/the-box/bot/internal/model"
+	bs "github.com/Pyotr23/the-box/bot/internal/service/bluetooth"
+	mp "github.com/Pyotr23/the-box/bot/internal/service/message_processor"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-const botName = "bot manager"
+const (
+	botName   = "bot manager"
+	chatIdKey = "chatID"
+)
 
 type updateChSetter interface {
-	SetUpdateChannel(ch chan io.ReadCloser)
+	SetUpdateChannel(ch chan *json.Decoder)
+}
+
+type processor interface {
+	ProcessCommand(ctx context.Context, text string) error
 }
 
 type botManager struct {
-	api    *tgbotapi.BotAPI
-	bodyCh chan io.ReadCloser
+	api          *tgbotapi.BotAPI
+	bodyCh       chan *json.Decoder
+	textChatIdCh chan model.TextChatID
+	processor    processor
 	// inputTextCh     chan model.TextChatID
 	// outputTextCh    chan model.TextChatID
 	// waitInputTextCh chan struct{}
@@ -53,11 +67,19 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 		return fmt.Errorf("new bot api: %w", err)
 	}
 
-	b.bodyCh = make(chan io.ReadCloser)
+	b.bodyCh = make(chan *json.Decoder)
+	b.textChatIdCh = make(chan model.TextChatID)
+
+	bluetoothClient, err := bc.NewClient()
+	if err != nil {
+		return fmt.Errorf("bluetooth client: %w", err)
+	}
+
+	bluetoothService := bs.NewService(bluetoothClient)
+
+	b.processor = mp.NewService(bluetoothService, b.textChatIdCh)
 
 	us.SetUpdateChannel(b.bodyCh)
-
-	// 	mediator.updateCh = b.bodyCh
 
 	// 	b.inputTextCh = make(chan model.TextChatID)
 	// 	b.outputTextCh = make(chan model.TextChatID)
@@ -67,30 +89,38 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 	// 	// a.inputMessageCh = b.inputMessageCh
 	// 	// a.outputMessageCh = b.outputMessageCh
 
-	// 	go func() {
-	// 		for readCloser := range b.bodyCh {
-	// 			update, err := decode(readCloser)
-	// 			if err != nil {
-	// 				helper.Logln(err.Error())
-	// 				return
-	// 			}
+	go func() {
+		for decoder := range b.bodyCh {
+			var update tgbotapi.Update
+			if err := decoder.Decode(&update); err != nil {
+				log.Printf("decode: %s", err)
+				continue
+			}
 
-	// 			if update == nil {
-	// 				helper.Logln("nil update")
-	// 				return
-	// 			}
+			if update.Message == nil {
+				log.Print("nil message")
+				continue
+			}
 
-	// 			if update.Message != nil {
-	// 				// select {
-	// 				// case <-b.waitInputTextCh:
-	// 				// 	b.userMessageCh <- update.Message.Text
-	// 				// default:
-	// 				// 	break
-	// 				// }
+			chatID := update.Message.Chat.ID
+			ctx := helper.CtxWithChatIdValue(context.Background(), chatID)
+			if err := b.processor.ProcessCommand(ctx, update.Message.Text); err != nil {
+				b.textChatIdCh <- model.TextChatID{
+					Text:   fmt.Sprintf("process command: %s", err),
+					ChatID: chatID,
+				}
+			}
+		}
+	}()
 
-	// 			}
-	// 		}
-	// 	}()
+	go func() {
+		for textChatID := range b.textChatIdCh {
+			message := tgbotapi.NewMessage(textChatID.ChatID, textChatID.Text)
+			if _, err := b.api.Send(message); err != nil {
+				log.Printf("send fail: %s", err)
+			}
+		}
+	}()
 
 	// 	go func() {
 	// 		for data := range b.outputTextCh {
@@ -111,27 +141,15 @@ func (*botManager) SuccessLog() {
 }
 
 func (b *botManager) Close(_ context.Context) error {
+	// TODO write to closed channel
+	close(b.bodyCh)
+	close(b.textChatIdCh)
 	return nil
 }
 
 func (*botManager) CloseLog() {
 	log.Printf("graceful shutdown of module '%s'", botName)
 }
-
-// func decode(readCloser io.ReadCloser) (*tgbotapi.Update, error) {
-// 	defer func() {
-// 		if err := readCloser.Close(); err != nil {
-// 			helper.Logln(fmt.Sprintf("close body: %s", err.Error()))
-// 		}
-// 	}()
-
-// 	var update *tgbotapi.Update
-// 	if err := json.NewDecoder(readCloser).Decode(update); err != nil {
-// 		return nil, fmt.Errorf("decode: %w", err)
-// 	}
-
-// 	return update, nil
-// }
 
 // func (b *botManager) processBody(body io.ReadCloser) {
 // 	defer func() {

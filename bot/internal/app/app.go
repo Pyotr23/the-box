@@ -2,11 +2,12 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/Pyotr23/the-box/bot/internal/app/module"
 )
@@ -24,7 +25,7 @@ type (
 		modules         []appModule
 		tunnel          net.Listener
 		shutdownStartCh chan struct{}
-		updateCh        chan io.ReadCloser
+		updateCh        chan *json.Decoder
 	}
 )
 
@@ -46,19 +47,17 @@ func (a *App) Run(ctx context.Context) (chan struct{}, chan error) {
 }
 
 func (a *App) Exit(ctx context.Context) {
-	for i := len(a.modules) - 1; i >= 0; i-- {
-		m := a.modules[i]
-
-		if err := m.Close(ctx); err != nil {
-			log.Print(fmt.Sprintf("failed graceful shutdown of module '%s'\n", m.Name()))
+	for _, mod := range a.modules {
+		if err := mod.Close(ctx); err != nil {
+			log.Print(fmt.Sprintf("failed graceful shutdown of module '%s'\n", mod.Name()))
 			continue
 		}
 
-		m.CloseLog()
+		mod.CloseLog()
 	}
 }
 
-func (a *App) SetUpdateChannel(ch chan io.ReadCloser) {
+func (a *App) SetUpdateChannel(ch chan *json.Decoder) {
 	a.updateCh = ch
 }
 
@@ -76,12 +75,12 @@ func (a *App) SetShutdownStartChannel(ch chan struct{}) {
 
 func (a *App) init(ctx context.Context) error {
 	a.modules = []appModule{
+		module.NewGracefulShutdown(),
 		module.NewNgrokTunnel(),
 		module.NewWebhook(),
 		module.NewBotManager(),
 		// newBluetoothClient(),
 		// newMessage(),
-		module.NewGracefulShutdown(),
 	}
 
 	for _, module := range a.modules {
@@ -102,5 +101,7 @@ func (a *App) handleUpdate(_ http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.updateCh <- r.Body
+	a.updateCh <- json.NewDecoder(r.Body)
+
+	time.Sleep(time.Second)
 }
