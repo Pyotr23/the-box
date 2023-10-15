@@ -26,6 +26,7 @@ type updateChSetter interface {
 }
 
 type processor interface {
+	Process(ctx context.Context, text string) error
 	ProcessCommand(ctx context.Context, text string) error
 }
 
@@ -33,14 +34,8 @@ type botManager struct {
 	api          *tgbotapi.BotAPI
 	bodyCh       chan *json.Decoder
 	textChatIdCh chan model.TextChatID
+	keyboardCh   chan model.Keyboard
 	processor    processor
-	// inputTextCh     chan model.TextChatID
-	// outputTextCh    chan model.TextChatID
-	// waitInputTextCh chan struct{}
-	// userMessageCh   chan string
-
-	// inputMessageCh  chan model.Message
-	// outputMessageCh chan model.Message
 }
 
 func NewBotManager() *botManager {
@@ -69,6 +64,7 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 
 	b.bodyCh = make(chan *json.Decoder)
 	b.textChatIdCh = make(chan model.TextChatID)
+	b.keyboardCh = make(chan model.Keyboard)
 
 	bluetoothClient, err := bc.NewClient()
 	if err != nil {
@@ -77,7 +73,7 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 
 	bluetoothService := bs.NewService(bluetoothClient)
 
-	b.processor = mp.NewService(bluetoothService, b.textChatIdCh)
+	b.processor = mp.NewService(bluetoothService, b.textChatIdCh, b.keyboardCh)
 
 	us.SetUpdateChannel(b.bodyCh)
 
@@ -97,16 +93,40 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 				continue
 			}
 
-			if update.Message == nil {
-				log.Print("nil message")
+			var (
+				isCommand bool
+				chatID    int64
+				text      string
+			)
+			switch {
+			case update.Message != nil:
+				isCommand = update.Message.IsCommand()
+				chatID = update.Message.Chat.ID
+				text = update.Message.Text
+			case update.CallbackQuery != nil:
+				chatID = update.CallbackQuery.Message.Chat.ID
+				text = update.CallbackQuery.Data
+			default:
+				log.Print("unknown message")
 				continue
 			}
 
-			chatID := update.Message.Chat.ID
 			ctx := helper.CtxWithChatIdValue(context.Background(), chatID)
-			if err := b.processor.ProcessCommand(ctx, update.Message.Text); err != nil {
+
+			var errText string
+			if isCommand {
+				if err := b.processor.ProcessCommand(ctx, text); err != nil {
+					errText = fmt.Sprintf("process command: %s", err)
+				}
+			} else {
+				if err := b.processor.Process(ctx, text); err != nil {
+					errText = fmt.Sprintf("process message: %s", err)
+				}
+			}
+
+			if errText != "" {
 				b.textChatIdCh <- model.TextChatID{
-					Text:   fmt.Sprintf("process command: %s", err),
+					Text:   errText,
 					ChatID: chatID,
 				}
 			}
@@ -117,7 +137,21 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 		for textChatID := range b.textChatIdCh {
 			message := tgbotapi.NewMessage(textChatID.ChatID, textChatID.Text)
 			if _, err := b.api.Send(message); err != nil {
-				log.Printf("send fail: %s", err)
+				log.Printf("send message fail: %s", err)
+			}
+		}
+	}()
+
+	go func() {
+		for keyboard := range b.keyboardCh {
+			var message = tgbotapi.NewMessage(keyboard.ChatID, keyboard.Message)
+			var keyboardButtons = make([]tgbotapi.InlineKeyboardButton, 0, len(keyboard.Buttons))
+			for _, b := range keyboard.Buttons {
+				keyboardButtons = append(keyboardButtons, tgbotapi.NewInlineKeyboardButtonData(b.Key, b.Key))
+			}
+			message.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboardButtons)
+			if _, err := b.api.Send(message); err != nil {
+				log.Printf("send one time reply keyboard fail: %s", err)
 			}
 		}
 	}()
@@ -144,6 +178,7 @@ func (b *botManager) Close(_ context.Context) error {
 	// TODO write to closed channel
 	close(b.bodyCh)
 	close(b.textChatIdCh)
+	close(b.keyboardCh)
 	return nil
 }
 

@@ -10,6 +10,17 @@ type TextChatID struct {
 	Text   string
 }
 
+type Keyboard struct {
+	ChatID  int64
+	Message string
+	Buttons []Button
+}
+
+type Button struct {
+	Key   string
+	Value string
+}
+
 type Info struct {
 	ChatID       int64
 	OutputTextCh chan TextChatID

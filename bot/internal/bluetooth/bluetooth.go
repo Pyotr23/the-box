@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/Pyotr23/the-box/bot/internal/helper"
 	bl "tinygo.org/x/bluetooth"
 )
 
@@ -40,7 +39,7 @@ func getScanResult(adapter *bl.Adapter) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), maxScanDuration)
 	defer cancel()
 
-	helper.Logln(fmt.Sprintf("scanning for '%s'...", deviceName))
+	log.Printf("scanning for '%s'...", deviceName)
 
 	go func() {
 		select {
@@ -58,7 +57,7 @@ func getScanResult(adapter *bl.Adapter) (string, error) {
 		macs = append(macs, device.LocalName()) // device.Address.String())
 	})
 
-	helper.Logln(fmt.Sprintf("founded %s - %v", deviceName, macs))
+	log.Printf("founded %s - %v", deviceName, macs)
 
 	return "", err
 }
