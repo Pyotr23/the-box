@@ -12,7 +12,7 @@ import (
 	"github.com/Pyotr23/the-box/bot/internal/helper"
 	"github.com/Pyotr23/the-box/bot/internal/model"
 	bs "github.com/Pyotr23/the-box/bot/internal/service/bluetooth"
-	mp "github.com/Pyotr23/the-box/bot/internal/service/message_processor"
+	"github.com/Pyotr23/the-box/bot/internal/sm"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -25,17 +25,19 @@ type updateChSetter interface {
 	SetUpdateChannel(ch chan *json.Decoder)
 }
 
-type processor interface {
-	Process(ctx context.Context, text string) error
-	ProcessCommand(ctx context.Context, text string) error
+type process func(ctx context.Context, text string) error
+
+type processorGetter interface {
+	GetCommandProcessor() func(ctx context.Context, text string) error
+	GetTextProcessor() func(ctx context.Context, text string) error
 }
 
 type botManager struct {
-	api          *tgbotapi.BotAPI
-	bodyCh       chan *json.Decoder
-	textChatIdCh chan model.TextChatID
-	keyboardCh   chan model.Keyboard
-	processor    processor
+	api             *tgbotapi.BotAPI
+	bodyCh          chan *json.Decoder
+	textChatIdCh    chan model.TextChatID
+	keyboardCh      chan model.Keyboard
+	processorGetter processorGetter
 }
 
 func NewBotManager() *botManager {
@@ -73,17 +75,9 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 
 	bluetoothService := bs.NewService(bluetoothClient)
 
-	b.processor = mp.NewService(bluetoothService, b.textChatIdCh, b.keyboardCh)
+	b.processorGetter = sm.NewFsmProcessor(bluetoothService, b.textChatIdCh, b.keyboardCh)
 
 	us.SetUpdateChannel(b.bodyCh)
-
-	// 	b.inputTextCh = make(chan model.TextChatID)
-	// 	b.outputTextCh = make(chan model.TextChatID)
-	// 	b.waitInputTextCh = make(chan struct{})
-	// 	b.userMessageCh = make(chan string)
-
-	// 	// a.inputMessageCh = b.inputMessageCh
-	// 	// a.outputMessageCh = b.outputMessageCh
 
 	go func() {
 		for decoder := range b.bodyCh {
@@ -94,18 +88,23 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 			}
 
 			var (
-				isCommand bool
-				chatID    int64
-				text      string
+				chatID  int64
+				text    string
+				process process
 			)
 			switch {
 			case update.Message != nil:
-				isCommand = update.Message.IsCommand()
 				chatID = update.Message.Chat.ID
 				text = update.Message.Text
+				if update.Message.IsCommand() {
+					process = b.processorGetter.GetCommandProcessor()
+				} else {
+					process = b.processorGetter.GetTextProcessor()
+				}
 			case update.CallbackQuery != nil:
 				chatID = update.CallbackQuery.Message.Chat.ID
 				text = update.CallbackQuery.Data
+				process = b.processorGetter.GetTextProcessor()
 			default:
 				log.Print("unknown message")
 				continue
@@ -113,20 +112,9 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 
 			ctx := helper.CtxWithChatIdValue(context.Background(), chatID)
 
-			var errText string
-			if isCommand {
-				if err := b.processor.ProcessCommand(ctx, text); err != nil {
-					errText = fmt.Sprintf("process command: %s", err)
-				}
-			} else {
-				if err := b.processor.Process(ctx, text); err != nil {
-					errText = fmt.Sprintf("process message: %s", err)
-				}
-			}
-
-			if errText != "" {
+			if err := process(ctx, text); err != nil {
 				b.textChatIdCh <- model.TextChatID{
-					Text:   errText,
+					Text:   err.Error(),
 					ChatID: chatID,
 				}
 			}
@@ -156,17 +144,6 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 		}
 	}()
 
-	// 	go func() {
-	// 		for data := range b.outputTextCh {
-	// 			helper.Logln(fmt.Sprintf("data for user - %v", data))
-
-	// 			message := tgbotapi.NewMessage(data.ChatID, data.Text)
-	// 			if _, err := b.api.Send(message); err != nil {
-	// 				helper.Logln(fmt.Sprintf("send fail: %s", err.Error()))
-	// 			}
-	// 		}
-	// 	}()
-
 	return nil
 }
 
@@ -185,33 +162,3 @@ func (b *botManager) Close(_ context.Context) error {
 func (*botManager) CloseLog() {
 	log.Printf("graceful shutdown of module '%s'", botName)
 }
-
-// func (b *botManager) processBody(body io.ReadCloser) {
-// 	defer func() {
-// 		if err := body.Close(); err != nil {
-// 			helper.Logln(fmt.Sprintf("close body: %s", err.Error()))
-// 		}
-// 	}()
-
-// 	var update *tgbotapi.Update
-// 	if err := json.NewDecoder(body).Decode(update); err != nil {
-// 		helper.Logln(fmt.Sprintf("decode: %s", err.Error()))
-// 		return
-// 	}
-
-// 	if update == nil {
-// 		helper.Logln("empty update")
-// 		return
-// 	}
-
-// 	if update.Message != nil {
-// 		if update.Message.Text != "" {
-// 			b.inputTextCh <- model.TextChatID{
-// 				Text:   update.Message.Text,
-// 				ChatID: update.Message.Chat.ID,
-// 			}
-// 		}
-// 	}
-
-// 	helper.Logln("empty/unknown update")
-// }
