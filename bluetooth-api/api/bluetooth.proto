@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "/bluetooth";
+
+service Bluetooth {
+    rpc Search(SearchRequest) returns (SearchResponse);
+}
+
+message SearchRequest {
+    repeated string DeviceNames = 1;
+}
+
+message SearchResponse {
+    message AddressesByName {
+        string Name = 1;
+        repeated string MacAddresses = 2;
+    } 
+
+    repeated AddressesByName Items = 1;
+}

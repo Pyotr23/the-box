@@ -15,3 +15,6 @@
 # vendor/
 
 main
+
+/.vscode
+/.idea
