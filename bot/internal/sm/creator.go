@@ -2,6 +2,7 @@ package sm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -67,23 +68,25 @@ func (c *fsmCreator) newSearchFSM() *fsm.FSM {
 		},
 		fsm.Callbacks{
 			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
 				chatID := helper.ChatIdFromCtx(ctx)
 				if chatID == 0 {
-					log.Print("chat id not found in context")
+					log.Print(model.ErrMessageNoChatID)
 					return
 				}
 
 				macAddresses, err := c.service.Search(ctx)
-
-				var text string
-				if err == nil {
-					text = strings.Join(macAddresses, ",")
-				} else {
-					text = fmt.Sprintf("search: %s", err)
+				if err != nil {
+					err = fmt.Errorf("search: %w", err)
+					return
 				}
 
 				c.textChatIdCh <- model.TextChatID{
-					Text:   text,
+					Text:   strings.Join(macAddresses, ","),
 					ChatID: chatID,
 				}
 
@@ -118,18 +121,21 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 		},
 		fsm.Callbacks{
 			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
 				chatID := helper.ChatIdFromCtx(ctx)
 				if chatID == 0 {
-					log.Print("chat id not found in context")
+					log.Print(model.ErrMessageNoChatID)
 					return
 				}
 
 				macAddresses, err := c.service.Search(ctx)
 				if err != nil {
-					c.textChatIdCh <- model.TextChatID{
-						Text:   fmt.Sprintf("search: %s", err),
-						ChatID: chatID,
-					}
+					err = fmt.Errorf("search: %w", err)
+					return
 				}
 
 				if len(macAddresses) == 0 {
@@ -142,7 +148,8 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 						model.Button{
 							Key:   ma,
 							Value: ma,
-						})
+						},
+					)
 				}
 
 				c.keyboardCh <- model.Keyboard{
@@ -150,35 +157,34 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 					Message: "choose the device:",
 					Buttons: buttons,
 				}
-
-				return
 			},
 			withLeavePrefix(choiceWaitingState): func(ctx context.Context, e *fsm.Event) {
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print("chat id not found in context")
-				}
-
-				var text string
+				var err error
 				defer func() {
-					c.textChatIdCh <- model.TextChatID{
-						Text:   text,
-						ChatID: chatID,
-					}
+					e.Err = err
 				}()
 
-				textInterface, exists := e.FSM.Metadata(textKey)
-				if !exists {
-					text = fmt.Sprintf("metadata '%s' not found", textKey)
+				chatID := helper.ChatIdFromCtx(ctx)
+				if chatID == 0 {
+					log.Print(model.ErrMessageNoChatID)
 					return
 				}
 
-				t, ok := textInterface.(string)
-				if !ok {
-					text = "metadata not string"
+				if len(e.Args) == 0 {
+					err = errors.New("no args")
+					return
 				}
 
-				text = t
+				userChoice, ok := e.Args[0].(string)
+				if !ok {
+					err = errors.New("first arg not string")
+					return
+				}
+
+				c.textChatIdCh <- model.TextChatID{
+					Text:   userChoice,
+					ChatID: chatID,
+				}
 
 				return
 			},

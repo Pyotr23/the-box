@@ -10,8 +10,6 @@ import (
 	"github.com/looplab/fsm"
 )
 
-const textKey = "text"
-
 type creator interface {
 	create(command string) (*fsm.FSM, error)
 }
@@ -66,9 +64,7 @@ func (p *fsmProcessor) GetTextProcessor() func(ctx context.Context, text string)
 			return errors.New("text but no command before")
 		}
 
-		sm.SetMetadata(textKey, text)
-
-		if err := makeEvent(ctx, sm); err != nil {
+		if err := makeEvent(ctx, sm, text); err != nil {
 			return fmt.Errorf("make event: %w", err)
 		}
 
@@ -76,13 +72,13 @@ func (p *fsmProcessor) GetTextProcessor() func(ctx context.Context, text string)
 	}
 }
 
-func makeEvent(ctx context.Context, sm *fsm.FSM) error {
+func makeEvent(ctx context.Context, sm *fsm.FSM, args ...interface{}) error {
 	transitions := sm.AvailableTransitions()
 	switch len(transitions) {
 	case 0:
 		return fmt.Errorf("no transitions for state '%s'", sm.Current())
 	case 1:
-		return sm.Event(ctx, transitions[0])
+		return sm.Event(ctx, transitions[0], args...)
 	default:
 		return fmt.Errorf("two much transitions for state '%s'", sm.Current())
 	}
