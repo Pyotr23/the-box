@@ -11,6 +11,7 @@ import (
 	common "github.com/Pyotr23/the-box/common/pkg/config"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -62,4 +63,15 @@ func (c *Client) Search(ctx context.Context, deviceNames []string) ([]string, er
 	}
 
 	return resp.GetMacAddresses(), nil
+}
+
+func (c *Client) Blink(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultDuration)
+	defer cancel()
+
+	if _, err := c.api.Blink(ctx, &emptypb.Empty{}); err != nil {
+		return fmt.Errorf("api call: %w", err)
+	}
+
+	return nil
 }

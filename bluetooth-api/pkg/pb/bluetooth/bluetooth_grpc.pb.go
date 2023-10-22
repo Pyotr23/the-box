@@ -8,6 +8,7 @@ package bluetooth
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	Bluetooth_Search_FullMethodName = "/Bluetooth/Search"
+	Bluetooth_Blink_FullMethodName  = "/Bluetooth/Blink"
 )
 
 // BluetoothClient is the client API for Bluetooth service.
@@ -27,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BluetoothClient interface {
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
+	Blink(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type bluetoothClient struct {
@@ -46,11 +49,21 @@ func (c *bluetoothClient) Search(ctx context.Context, in *SearchRequest, opts ..
 	return out, nil
 }
 
+func (c *bluetoothClient) Blink(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, Bluetooth_Blink_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BluetoothServer is the server API for Bluetooth service.
 // All implementations must embed UnimplementedBluetoothServer
 // for forward compatibility
 type BluetoothServer interface {
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
+	Blink(context.Context, *empty.Empty) (*empty.Empty, error)
 	mustEmbedUnimplementedBluetoothServer()
 }
 
@@ -60,6 +73,9 @@ type UnimplementedBluetoothServer struct {
 
 func (UnimplementedBluetoothServer) Search(context.Context, *SearchRequest) (*SearchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
+}
+func (UnimplementedBluetoothServer) Blink(context.Context, *empty.Empty) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Blink not implemented")
 }
 func (UnimplementedBluetoothServer) mustEmbedUnimplementedBluetoothServer() {}
 
@@ -92,6 +108,24 @@ func _Bluetooth_Search_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Bluetooth_Blink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BluetoothServer).Blink(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bluetooth_Blink_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BluetoothServer).Blink(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Bluetooth_ServiceDesc is the grpc.ServiceDesc for Bluetooth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -102,6 +136,10 @@ var Bluetooth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Search",
 			Handler:    _Bluetooth_Search_Handler,
+		},
+		{
+			MethodName: "Blink",
+			Handler:    _Bluetooth_Blink_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

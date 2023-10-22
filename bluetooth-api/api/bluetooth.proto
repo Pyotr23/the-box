@@ -2,8 +2,11 @@ syntax = "proto3";
 
 option go_package = "/bluetooth";
 
+import "google/protobuf/empty.proto";
+
 service Bluetooth {
     rpc Search(SearchRequest) returns (SearchResponse);
+    rpc Blink(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message SearchRequest {

@@ -23,6 +23,9 @@ const int MODE_ADDRESS = 3;
 const int WAITING_TIMEOUT_MS = 5000;
 const int WAITING_SLEEP_TIMEOUT_MS = 100;
 
+const int BLINK_COUNT = 3;
+const int ONE_BLINK_TIMEOUT_MS = 500;
+
 int waitingCount;
 
 byte id, lowerTemperatureThreshold, higherTemperatureThreshold, mode;  
@@ -114,6 +117,13 @@ void loop() {
     sendSuccess();
   } else if (command == GET_MODE) {    
     writeSuccessMsg(mode);
+  } else if (command == BLINK) {
+    for (int i = 0; i < BLINK_COUNT; i++) {
+      digitalWrite(LED, HIGH);
+      delay(ONE_BLINK_TIMEOUT_MS);
+      digitalWrite(LED, LOW);
+    }
+    sendSuccess();
   }
 }
 

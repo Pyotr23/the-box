@@ -21,6 +21,7 @@ const (
 
 type bluetoothService interface {
 	Search(ctx context.Context) ([]string, error)
+	Blink(ctx context.Context, addr string) error
 }
 
 type fsmCreator struct {
@@ -111,13 +112,8 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 			{
 				Name: "choice",
 				Src:  []string{choiceWaitingState},
-				Dst:  "blinking",
+				Dst:  "finish",
 			},
-			// {
-			// 	Name: "blink",
-			// 	Src:  []string{"blinking"},
-			// 	Dst:  "finish",
-			// },
 		},
 		fsm.Callbacks{
 			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
@@ -181,9 +177,14 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 					return
 				}
 
+				if err = c.service.Blink(ctx, userChoice); err != nil {
+					err = fmt.Errorf("blink: %w", err)
+					return
+				}
+
 				c.textChatIdCh <- model.TextChatID{
-					Text:   userChoice,
 					ChatID: chatID,
+					Text:   "finish blinking",
 				}
 
 				return

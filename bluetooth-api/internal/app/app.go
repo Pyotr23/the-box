@@ -12,6 +12,7 @@ import (
 	macl "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/client/mac_address"
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/server"
 	masrv "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/service/mac_address"
+	socketrv "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/service/socket"
 	common "github.com/Pyotr23/the-box/common/pkg/config"
 	"google.golang.org/grpc"
 )
@@ -38,8 +39,9 @@ func NewApp() (*App, error) {
 	}
 
 	maService := masrv.NewMacAddressService(maClient)
+	socketService := socketrv.NewSocketService()
 
-	if app.Server, err = server.NewBluetoothServer(maService); err != nil {
+	if app.Server, err = server.NewBluetoothServer(maService, &socketService); err != nil {
 		return nil, fmt.Errorf("get server: %w", err)
 	}
 
