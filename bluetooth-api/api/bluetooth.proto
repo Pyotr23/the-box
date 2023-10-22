@@ -11,10 +11,5 @@ message SearchRequest {
 }
 
 message SearchResponse {
-    message AddressesByName {
-        string Name = 1;
-        repeated string MacAddresses = 2;
-    } 
-
-    repeated AddressesByName Items = 1;
+    repeated string MacAddresses = 1;
 }

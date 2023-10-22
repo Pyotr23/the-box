@@ -12,22 +12,18 @@ import (
 
 const maxScanDuration = time.Second * 3
 
-type MacAddressClient interface {
-	GetAddressesByNameMap(deviceNames []string) (map[string][]string, error)
-}
-
 type Client struct {
 	adapter *bt.Adapter
 }
 
-func NewClient() (MacAddressClient, error) {
+func NewMacAddressClient() (Client, error) {
 	adapter := bt.DefaultAdapter
 	return Client{
 		adapter: adapter,
 	}, adapter.Enable()
 }
 
-func (c Client) GetAddressesByNameMap(deviceNames []string) (map[string][]string, error) {
+func (c Client) GetAddressesByName(deviceNames []string) (map[string][]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), maxScanDuration)
 	defer cancel()
 

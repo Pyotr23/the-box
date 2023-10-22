@@ -9,37 +9,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	client "github.com/Pyotr23/the-box/bluetooth-api/internal/client/mac_address"
-	pb "github.com/Pyotr23/the-box/bluetooth-api/pkg/pb/bluetooth"
+	macl "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/client/mac_address"
+	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/server"
+	masrv "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/service/mac_address"
 	common "github.com/Pyotr23/the-box/common/pkg/config"
 	"google.golang.org/grpc"
 )
-
-type Implementation struct {
-	MacAddressClient client.MacAddressClient
-	pb.UnimplementedBluetoothServer
-}
-
-func (impl *Implementation) Search(ctx context.Context, in *pb.SearchRequest) (*pb.SearchResponse, error) {
-	m, err := impl.MacAddressClient.GetAddressesByNameMap(in.GetDeviceNames())
-	if err != nil {
-		return nil, err
-	}
-
-	log.Println(m)
-
-	var resp = &pb.SearchResponse{
-		Items: make([]*pb.SearchResponse_AddressesByName, 0, len(m)),
-	}
-	for deviceName, addresses := range m {
-		resp.Items = append(resp.Items, &pb.SearchResponse_AddressesByName{
-			Name:         deviceName,
-			MacAddresses: addresses,
-		})
-	}
-
-	return resp, nil
-}
 
 type App struct {
 	Listener net.Listener
@@ -56,7 +31,15 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("get listener: %w", err)
 	}
 
-	if app.Server, err = getServer(); err != nil {
+	maClient, err := macl.NewMacAddressClient()
+	if err != nil {
+		return nil, fmt.Errorf("create mac address client: %w", err)
+
+	}
+
+	maService := masrv.NewMacAddressService(maClient)
+
+	if app.Server, err = server.NewBluetoothServer(maService); err != nil {
 		return nil, fmt.Errorf("get server: %w", err)
 	}
 
@@ -75,24 +58,6 @@ func getListener() (net.Listener, error) {
 	}
 
 	return listener, nil
-}
-
-func getServer() (*grpc.Server, error) {
-	client, err := client.NewClient()
-	if err != nil {
-		return nil, err
-	}
-
-	s := grpc.NewServer()
-	impl := &Implementation{
-		MacAddressClient: client,
-	}
-
-	_, _ = impl.Search(context.Background(), &pb.SearchRequest{DeviceNames: []string{"HC-05", "HC-06"}})
-
-	pb.RegisterBluetoothServer(s, impl)
-
-	return s, nil
 }
 
 func (a *App) Run(ctx context.Context) (chan os.Signal, chan error) {

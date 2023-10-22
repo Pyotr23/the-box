@@ -49,7 +49,7 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Search(ctx context.Context, deviceNames []string) (map[string][]string, error) {
+func (c *Client) Search(ctx context.Context, deviceNames []string) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultDuration)
 	defer cancel()
 
@@ -61,10 +61,5 @@ func (c *Client) Search(ctx context.Context, deviceNames []string) (map[string][
 		return nil, fmt.Errorf("api call: %w", err)
 	}
 
-	var macAddressesByName = make(map[string][]string, len(resp.GetItems()))
-	for _, item := range resp.GetItems() {
-		macAddressesByName[item.GetName()] = item.GetMacAddresses()
-	}
-
-	return macAddressesByName, nil
+	return resp.GetMacAddresses(), nil
 }
