@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Pyotr23/the-box/bot/internal/app/module"
+	"github.com/Pyotr23/the-box/bot/internal/pkg/module"
 )
 
 type appModule interface {

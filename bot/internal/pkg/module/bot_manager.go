@@ -8,11 +8,11 @@ import (
 	"log"
 	"os"
 
-	bc "github.com/Pyotr23/the-box/bot/internal/client/bluetooth"
-	"github.com/Pyotr23/the-box/bot/internal/helper"
-	"github.com/Pyotr23/the-box/bot/internal/model"
-	bs "github.com/Pyotr23/the-box/bot/internal/service/bluetooth"
-	"github.com/Pyotr23/the-box/bot/internal/sm"
+	bc "github.com/Pyotr23/the-box/bot/internal/pkg/client/bluetooth"
+	"github.com/Pyotr23/the-box/bot/internal/pkg/helper"
+	"github.com/Pyotr23/the-box/bot/internal/pkg/model"
+	bs "github.com/Pyotr23/the-box/bot/internal/pkg/service/bluetooth"
+	"github.com/Pyotr23/the-box/bot/internal/pkg/sm"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 

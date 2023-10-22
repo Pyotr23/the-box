@@ -7,8 +7,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Pyotr23/the-box/bot/internal/helper"
-	"github.com/Pyotr23/the-box/bot/internal/model"
+	"github.com/Pyotr23/the-box/bot/internal/pkg/helper"
+	"github.com/Pyotr23/the-box/bot/internal/pkg/model"
 	"github.com/looplab/fsm"
 )
 

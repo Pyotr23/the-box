@@ -1,8 +1,7 @@
 package model
 
 import (
-	"github.com/Pyotr23/the-box/bot/internal/enum"
-	"github.com/Pyotr23/the-box/bot/internal/rfcomm"
+	"github.com/Pyotr23/the-box/bot/internal/pkg/enum"
 )
 
 const ErrMessageNoChatID = "chat id not found in context"
@@ -27,5 +26,4 @@ type Info struct {
 	ChatID       int64
 	OutputTextCh chan TextChatID
 	Code         enum.Code
-	Socket       rfcomm.Socket
 }
