@@ -20,13 +20,14 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/tinygo-org/cbgo v0.0.4 // indirect
 	golang.ngrok.com/ngrok v1.0.0 // indirect
-	golang.org/x/net v0.2.0 // indirect
-	golang.org/x/term v0.2.0 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/term v0.11.0 // indirect
+	google.golang.org/grpc v1.59.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 )
 
 require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
-	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
 	tinygo.org/x/bluetooth v0.6.0
 )

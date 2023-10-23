@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	helper "github.com/Pyotr23/the-box/common/pkg/context"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -36,7 +37,7 @@ func (s *Service) Blink(ctx context.Context, addr string) error {
 		return errors.New("empty mac address")
 	}
 
-	ctx = helper.ContextWithMacAddress(ctx, addr)
+	ctx = metadata.AppendToOutgoingContext(ctx, helper.MacAddressKey, addr)
 
 	return s.c.Blink(ctx)
 }
