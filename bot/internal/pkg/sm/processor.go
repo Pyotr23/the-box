@@ -44,6 +44,12 @@ func (p *fsmProcessor) GetCommandProcessor() func(ctx context.Context, command s
 
 		p.fsmByChatID[chatID] = sm
 
+		defer func() {
+			if len(sm.AvailableTransitions()) == 0 {
+				p.fsmByChatID[chatID] = nil
+			}
+		}()
+
 		if err = makeEvent(ctx, sm); err != nil {
 			return fmt.Errorf("make event: %w", err)
 		}
@@ -63,6 +69,12 @@ func (p *fsmProcessor) GetTextProcessor() func(ctx context.Context, text string)
 		if sm == nil {
 			return errors.New("text but no command before")
 		}
+
+		defer func() {
+			if len(sm.AvailableTransitions()) == 0 {
+				p.fsmByChatID[chatID] = nil
+			}
+		}()
 
 		if err := makeEvent(ctx, sm, text); err != nil {
 			return fmt.Errorf("make event: %w", err)

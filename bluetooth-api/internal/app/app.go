@@ -17,9 +17,14 @@ import (
 	"google.golang.org/grpc"
 )
 
+type closer interface {
+	Close(ctx context.Context)
+}
+
 type App struct {
 	Listener net.Listener
 	Server   *grpc.Server
+	closers  []closer
 }
 
 func NewApp() (*App, error) {
@@ -41,9 +46,11 @@ func NewApp() (*App, error) {
 	maService := masrv.NewMacAddressService(maClient)
 	socketService := socketrv.NewSocketService()
 
-	if app.Server, err = server.NewBluetoothServer(maService, &socketService); err != nil {
+	if app.Server, err = server.NewBluetoothServer(maService, socketService); err != nil {
 		return nil, fmt.Errorf("get server: %w", err)
 	}
+
+	app.closers = append(app.closers, socketService)
 
 	return app, nil
 }
@@ -77,6 +84,9 @@ func (a *App) Run(ctx context.Context) (chan os.Signal, chan error) {
 	return signalCh, errCh
 }
 
-func (a *App) Exit(_ context.Context) {
+func (a *App) Exit(ctx context.Context) {
 	a.Server.GracefulStop()
+	for _, closer := range a.closers {
+		closer.Close(ctx)
+	}
 }

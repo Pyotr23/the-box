@@ -122,6 +122,7 @@ void loop() {
       digitalWrite(LED, HIGH);
       delay(ONE_BLINK_TIMEOUT_MS);
       digitalWrite(LED, LOW);
+      delay(ONE_BLINK_TIMEOUT_MS);
     }
     sendSuccess();
   }
