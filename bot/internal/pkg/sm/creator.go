@@ -17,6 +17,9 @@ const (
 	searchCommand string = "search"
 
 	leavePrefix = "leave_"
+	enterPrefix = "enter_"
+
+	eventKey = "event"
 )
 
 type bluetoothService interface {
@@ -58,11 +61,14 @@ func (c *fsmCreator) create(command string) (*fsm.FSM, error) {
 }
 
 func (c *fsmCreator) newSearchFSM() *fsm.FSM {
-	const startState = "start"
-	return fsm.NewFSM(startState,
+	const (
+		startState  = "start"
+		searchEvent = "search"
+	)
+	var sm = fsm.NewFSM(startState,
 		fsm.Events{
 			{
-				Name: "search",
+				Name: searchEvent,
 				Src:  []string{startState},
 				Dst:  "finish",
 			},
@@ -95,22 +101,28 @@ func (c *fsmCreator) newSearchFSM() *fsm.FSM {
 			},
 		},
 	)
+
+	sm.SetMetadata(eventKey, searchEvent)
+
+	return sm
 }
 
 func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 	const (
 		startState         = "start"
 		choiceWaitingState = "choice_waiting"
+		searchEvent        = "search"
+		choiceEvent        = "choice"
 	)
-	return fsm.NewFSM("start",
+	var sm = fsm.NewFSM("start",
 		fsm.Events{
 			{
-				Name: "search",
+				Name: searchEvent,
 				Src:  []string{startState},
 				Dst:  choiceWaitingState,
 			},
 			{
-				Name: "choice",
+				Name: choiceEvent,
 				Src:  []string{choiceWaitingState},
 				Dst:  "finish",
 			},
@@ -153,6 +165,8 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 					Message: "choose the device:",
 					Buttons: buttons,
 				}
+
+				e.FSM.SetMetadata(eventKey, choiceEvent)
 			},
 			withLeavePrefix(choiceWaitingState): func(ctx context.Context, e *fsm.Event) {
 				var err error
@@ -191,8 +205,16 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 			},
 		},
 	)
+
+	sm.SetMetadata(eventKey, searchEvent)
+
+	return sm
 }
 
 func withLeavePrefix(state string) string {
 	return leavePrefix + state
+}
+
+func withEnterPrefix(state string) string {
+	return enterPrefix + state
 }

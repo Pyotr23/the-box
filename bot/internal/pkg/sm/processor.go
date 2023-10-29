@@ -85,13 +85,21 @@ func (p *fsmProcessor) GetTextProcessor() func(ctx context.Context, text string)
 }
 
 func makeEvent(ctx context.Context, sm *fsm.FSM, args ...interface{}) error {
-	transitions := sm.AvailableTransitions()
-	switch len(transitions) {
-	case 0:
-		return fmt.Errorf("no transitions for state '%s'", sm.Current())
-	case 1:
-		return sm.Event(ctx, transitions[0], args...)
-	default:
-		return fmt.Errorf("two much transitions for state '%s'", sm.Current())
+	startState := sm.Current()
+
+	genericEvent, ok := sm.Metadata(eventKey)
+	if !ok {
+		return fmt.Errorf("event not found in metadata by key '%s'", eventKey)
 	}
+
+	event, ok := genericEvent.(string)
+	if !ok {
+		return errors.New("event not string in metadata")
+	}
+	if err := sm.Event(ctx, event, args...); err != nil {
+		sm.SetState(startState)
+		return fmt.Errorf("make event '%s': %w", event, err)
+	}
+
+	return nil
 }
