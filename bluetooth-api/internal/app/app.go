@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	macl "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/client/mac_address"
+	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/repo"
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/server"
 	masrv "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/service/mac_address"
 	socketrv "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/service/socket"
@@ -33,16 +34,24 @@ func NewApp() (*App, error) {
 		app = &App{}
 	)
 
+	log.Print("try to listen port...")
 	if app.Listener, err = getListener(); err != nil {
 		return nil, fmt.Errorf("get listener: %w", err)
 	}
 
+	log.Print("try connect to db...")
+	_, err = repo.NewRepo()
+	if err != nil {
+		return nil, fmt.Errorf("new repository: %w", err)
+	}
+
+	log.Print("create clients...")
 	maClient, err := macl.NewMacAddressClient()
 	if err != nil {
 		return nil, fmt.Errorf("create mac address client: %w", err)
-
 	}
 
+	log.Print("create services...")
 	maService := masrv.NewMacAddressService(maClient)
 	socketService := socketrv.NewSocketService()
 
