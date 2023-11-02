@@ -18,3 +18,4 @@ main
 
 /.vscode
 /.idea
+*.db

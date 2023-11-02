@@ -75,3 +75,18 @@ func (c *Client) Blink(ctx context.Context) error {
 
 	return nil
 }
+
+func (c *Client) RegisterDevice(ctx context.Context, name, address string) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultDuration)
+	defer cancel()
+
+	req := &b.RegisterDeviceRequest{
+		Name:       name,
+		MacAddress: address,
+	}
+	if _, err := c.api.RegisterDevice(ctx, req); err != nil {
+		return fmt.Errorf("api call: %w", err)
+	}
+
+	return nil
+}

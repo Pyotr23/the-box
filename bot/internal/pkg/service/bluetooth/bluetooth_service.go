@@ -16,6 +16,7 @@ const (
 type client interface {
 	Search(ctx context.Context, deviceNames []string) ([]string, error)
 	Blink(ctx context.Context) error
+	RegisterDevice(ctx context.Context, name, address string) error
 }
 
 type Service struct {
@@ -40,4 +41,8 @@ func (s *Service) Blink(ctx context.Context, addr string) error {
 	ctx = metadata.AppendToOutgoingContext(ctx, helper.MacAddressKey, addr)
 
 	return s.c.Blink(ctx)
+}
+
+func (s *Service) RegisterDevice(ctx context.Context, name, address string) error {
+	return s.c.RegisterDevice(ctx, name, address)
 }

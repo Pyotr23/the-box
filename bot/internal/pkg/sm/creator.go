@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	blinkCommand  string = "blink"
-	searchCommand string = "search"
+	blinkCommand    string = "blink"
+	searchCommand   string = "search"
+	registerCommand string = "register"
 
 	leavePrefix = "leave_"
 	enterPrefix = "enter_"
@@ -25,6 +26,7 @@ const (
 type bluetoothService interface {
 	Search(ctx context.Context) ([]string, error)
 	Blink(ctx context.Context, addr string) error
+	RegisterDevice(ctx context.Context, name, macAddress string) error
 }
 
 type fsmCreator struct {
@@ -55,6 +57,8 @@ func (c *fsmCreator) create(command string) (*fsm.FSM, error) {
 		return c.newSearchFSM(), nil
 	case blinkCommand:
 		return c.newBlinkFSM(), nil
+	case registerCommand:
+		return c.newRegisterDeviceFSM(), nil
 	default:
 		return nil, fmt.Errorf("unknown command '%s'", command)
 	}
@@ -95,6 +99,163 @@ func (c *fsmCreator) newSearchFSM() *fsm.FSM {
 				c.textChatIdCh <- model.TextChatID{
 					Text:   strings.Join(macAddresses, ","),
 					ChatID: chatID,
+				}
+
+				return
+			},
+		},
+	)
+
+	sm.SetMetadata(eventKey, searchEvent)
+
+	return sm
+}
+
+func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
+	const (
+		startState         = "start"
+		choiceWaitingState = "choice_waiting"
+		nameWaitingState   = "name_wating"
+		searchEvent        = "search"
+		getNameEvent       = "get_name"
+		registerEvent      = "choice"
+		macKey             = "address"
+	)
+	var sm = fsm.NewFSM("start",
+		fsm.Events{
+			{
+				Name: searchEvent,
+				Src:  []string{startState},
+				Dst:  choiceWaitingState,
+			},
+			{
+				Name: getNameEvent,
+				Src:  []string{choiceWaitingState},
+				Dst:  nameWaitingState,
+			},
+			{
+				Name: registerEvent,
+				Src:  []string{nameWaitingState},
+				Dst:  "finish",
+			},
+		},
+		fsm.Callbacks{
+			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				chatID := helper.ChatIdFromCtx(ctx)
+				if chatID == 0 {
+					log.Print(model.ErrMessageNoChatID)
+					return
+				}
+
+				macAddresses, err := c.service.Search(ctx)
+				if err != nil {
+					err = fmt.Errorf("search: %w", err)
+					return
+				}
+
+				if len(macAddresses) == 0 {
+					return
+				}
+
+				var buttons = make([]model.Button, 0, len(macAddresses))
+				for _, ma := range macAddresses {
+					buttons = append(buttons,
+						model.Button{
+							Key:   ma,
+							Value: ma,
+						},
+					)
+				}
+
+				c.keyboardCh <- model.Keyboard{
+					ChatID:  chatID,
+					Message: "choose the device:",
+					Buttons: buttons,
+				}
+
+				e.FSM.SetMetadata(eventKey, getNameEvent)
+			},
+			withLeavePrefix(choiceWaitingState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				chatID := helper.ChatIdFromCtx(ctx)
+				if chatID == 0 {
+					log.Print(model.ErrMessageNoChatID)
+					return
+				}
+
+				if len(e.Args) == 0 {
+					err = errors.New("no args")
+					return
+				}
+
+				userChoice, ok := e.Args[0].(string)
+				if !ok {
+					err = errors.New("first arg not string")
+					return
+				}
+
+				e.FSM.SetMetadata(macKey, userChoice)
+
+				c.textChatIdCh <- model.TextChatID{
+					ChatID: chatID,
+					Text:   "enter device name",
+				}
+
+				e.FSM.SetMetadata(eventKey, registerEvent)
+
+				return
+			},
+			withLeavePrefix(nameWaitingState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				chatID := helper.ChatIdFromCtx(ctx)
+				if chatID == 0 {
+					log.Print(model.ErrMessageNoChatID)
+					return
+				}
+
+				if len(e.Args) == 0 {
+					err = errors.New("no args")
+					return
+				}
+
+				deviceName, ok := e.Args[0].(string)
+				if !ok {
+					err = errors.New("first arg not string")
+					return
+				}
+
+				macValue, ok := e.FSM.Metadata(macKey)
+				if !ok {
+					err = fmt.Errorf("metadata '%s' not found", macKey)
+					return
+				}
+				address, ok := macValue.(string)
+				if !ok {
+					err = fmt.Errorf("metadat '%s' not string", macKey)
+					return
+				}
+
+				if err := c.service.RegisterDevice(ctx, deviceName, address); err != nil {
+					err = fmt.Errorf("register device: %w", err)
+					return
+				}
+
+				c.textChatIdCh <- model.TextChatID{
+					ChatID: chatID,
+					Text:   "device registered",
 				}
 
 				return

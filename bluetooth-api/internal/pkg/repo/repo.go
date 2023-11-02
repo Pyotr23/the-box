@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -40,7 +39,7 @@ func (_ Repository) UpsertDevice(ctx context.Context, name, macAddress string) e
 		values (?, ?)
 		on conflict do update 
 		set name = ?
-			, updated_at = ?`
+			, updated_at = current_timestamp`
 
 	db, err := getDB()
 	if err != nil {
@@ -52,7 +51,7 @@ func (_ Repository) UpsertDevice(ctx context.Context, name, macAddress string) e
 		return fmt.Errorf("prepare context: %w", err)
 	}
 
-	if _, err = stm.ExecContext(ctx, macAddress, name, name, time.Now()); err != nil {
+	if _, err = stm.ExecContext(ctx, macAddress, name, name); err != nil {
 		return fmt.Errorf("exec context: %w", err)
 	}
 
