@@ -7,6 +7,7 @@ import "google/protobuf/empty.proto";
 service Bluetooth {
     rpc Search(SearchRequest) returns (SearchResponse);
     rpc Blink(google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc RegisterDevice(RegisterDeviceRequest) returns (google.protobuf.Empty);
 }
 
 message SearchRequest {
@@ -15,4 +16,9 @@ message SearchRequest {
 
 message SearchResponse {
     repeated string MacAddresses = 1;
+}
+
+message RegisterDeviceRequest {
+    string Name = 1;
+    string MacAddress = 2;
 }

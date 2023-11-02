@@ -20,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Bluetooth_Search_FullMethodName = "/Bluetooth/Search"
-	Bluetooth_Blink_FullMethodName  = "/Bluetooth/Blink"
+	Bluetooth_Search_FullMethodName         = "/Bluetooth/Search"
+	Bluetooth_Blink_FullMethodName          = "/Bluetooth/Blink"
+	Bluetooth_RegisterDevice_FullMethodName = "/Bluetooth/RegisterDevice"
 )
 
 // BluetoothClient is the client API for Bluetooth service.
@@ -30,6 +31,7 @@ const (
 type BluetoothClient interface {
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
 	Blink(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
+	RegisterDevice(ctx context.Context, in *RegisterDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type bluetoothClient struct {
@@ -58,12 +60,22 @@ func (c *bluetoothClient) Blink(ctx context.Context, in *empty.Empty, opts ...gr
 	return out, nil
 }
 
+func (c *bluetoothClient) RegisterDevice(ctx context.Context, in *RegisterDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, Bluetooth_RegisterDevice_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BluetoothServer is the server API for Bluetooth service.
 // All implementations must embed UnimplementedBluetoothServer
 // for forward compatibility
 type BluetoothServer interface {
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
 	Blink(context.Context, *empty.Empty) (*empty.Empty, error)
+	RegisterDevice(context.Context, *RegisterDeviceRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedBluetoothServer()
 }
 
@@ -76,6 +88,9 @@ func (UnimplementedBluetoothServer) Search(context.Context, *SearchRequest) (*Se
 }
 func (UnimplementedBluetoothServer) Blink(context.Context, *empty.Empty) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Blink not implemented")
+}
+func (UnimplementedBluetoothServer) RegisterDevice(context.Context, *RegisterDeviceRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterDevice not implemented")
 }
 func (UnimplementedBluetoothServer) mustEmbedUnimplementedBluetoothServer() {}
 
@@ -126,6 +141,24 @@ func _Bluetooth_Blink_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Bluetooth_RegisterDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterDeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BluetoothServer).RegisterDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bluetooth_RegisterDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BluetoothServer).RegisterDevice(ctx, req.(*RegisterDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Bluetooth_ServiceDesc is the grpc.ServiceDesc for Bluetooth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -140,6 +173,10 @@ var Bluetooth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Blink",
 			Handler:    _Bluetooth_Blink_Handler,
+		},
+		{
+			MethodName: "RegisterDevice",
+			Handler:    _Bluetooth_RegisterDevice_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

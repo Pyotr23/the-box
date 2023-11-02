@@ -12,6 +12,10 @@ type (
 		Search(ctx context.Context, devicesNames []string) ([]string, error)
 	}
 
+	dbService interface {
+		RegisterDevice(ctx context.Context, name, address string) error
+	}
+
 	socketService interface {
 		Blink(ctx context.Context, macAddress string) error
 	}
@@ -19,15 +23,21 @@ type (
 
 type Implementation struct {
 	MacAddressService macAddressService
+	DatabaseService   dbService
 	SocketService     socketService
 	pb.UnimplementedBluetoothServer
 }
 
-func NewBluetoothServer(service macAddressService, socketService socketService) (*grpc.Server, error) {
+func NewBluetoothServer(
+	macAddressService macAddressService,
+	socketService socketService,
+	dbService dbService,
+) (*grpc.Server, error) {
 	s := grpc.NewServer()
 	impl := &Implementation{
-		MacAddressService: service,
+		MacAddressService: macAddressService,
 		SocketService:     socketService,
+		DatabaseService:   dbService,
 	}
 
 	pb.RegisterBluetoothServer(s, impl)

@@ -12,6 +12,7 @@ import (
 	macl "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/client/mac_address"
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/repo"
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/server"
+	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/service/db"
 	masrv "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/service/mac_address"
 	socketrv "github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/service/socket"
 	common "github.com/Pyotr23/the-box/common/pkg/config"
@@ -40,7 +41,7 @@ func NewApp() (*App, error) {
 	}
 
 	log.Print("try connect to db...")
-	_, err = repo.NewRepo()
+	rp, err := repo.NewRepo()
 	if err != nil {
 		return nil, fmt.Errorf("new repository: %w", err)
 	}
@@ -54,8 +55,9 @@ func NewApp() (*App, error) {
 	log.Print("create services...")
 	maService := masrv.NewMacAddressService(maClient)
 	socketService := socketrv.NewSocketService()
+	dbService := db.NewDbService(rp)
 
-	if app.Server, err = server.NewBluetoothServer(maService, socketService); err != nil {
+	if app.Server, err = server.NewBluetoothServer(maService, socketService, dbService); err != nil {
 		return nil, fmt.Errorf("get server: %w", err)
 	}
 
