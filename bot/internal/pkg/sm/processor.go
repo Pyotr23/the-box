@@ -44,15 +44,15 @@ func (p *fsmProcessor) GetCommandProcessor() func(ctx context.Context, command s
 
 		p.fsmByChatID[chatID] = sm
 
-		defer func() {
-			if len(sm.AvailableTransitions()) == 0 {
-				p.fsmByChatID[chatID] = nil
-			}
-		}()
-
 		if err = makeEvent(ctx, sm); err != nil {
 			return fmt.Errorf("make event: %w", err)
 		}
+
+		defer func() {
+			if len(sm.AvailableTransitions()) == 0 {
+				delete(p.fsmByChatID, chatID)
+			}
+		}()
 
 		return nil
 	}

@@ -1,10 +1,12 @@
 package mac_address
 
-import "context"
+import (
+	"context"
+)
 
 type (
 	searcher interface {
-		GetAddressesByName(deviceNames []string) (map[string][]string, error)
+		GetAddressesByName(ctx context.Context, deviceNames []string) (map[string][]string, error)
 	}
 
 	Service struct {
@@ -19,7 +21,7 @@ func NewMacAddressService(searcher searcher) *Service {
 }
 
 func (s *Service) Search(ctx context.Context, devicesNames []string) ([]string, error) {
-	addressesByDeviceName, err := s.client.GetAddressesByName(devicesNames)
+	addressesByDeviceName, err := s.client.GetAddressesByName(ctx, devicesNames)
 	if err != nil {
 		return nil, err
 	}

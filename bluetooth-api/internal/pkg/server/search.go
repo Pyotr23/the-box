@@ -9,7 +9,7 @@ import (
 )
 
 func (impl *Implementation) Search(ctx context.Context, in *pb.SearchRequest) (*pb.SearchResponse, error) {
-	addresses, err := impl.MacAddressService.Search(ctx, in.GetDeviceNames())
+	addresses, err := impl.macAddressService.Search(ctx, in.GetDeviceNames())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

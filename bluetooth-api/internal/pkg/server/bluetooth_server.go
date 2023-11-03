@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 
+	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/model"
 	pb "github.com/Pyotr23/the-box/bluetooth-api/pkg/pb/bluetooth"
 	"google.golang.org/grpc"
 )
@@ -14,6 +15,7 @@ type (
 
 	dbService interface {
 		RegisterDevice(ctx context.Context, name, address string) error
+		GetDeviceByAddressMap(ctx context.Context, addresses []string) (map[string]model.Device, error)
 	}
 
 	socketService interface {
@@ -22,9 +24,9 @@ type (
 )
 
 type Implementation struct {
-	MacAddressService macAddressService
-	DatabaseService   dbService
-	SocketService     socketService
+	macAddressService macAddressService
+	databaseService   dbService
+	socketService     socketService
 	pb.UnimplementedBluetoothServer
 }
 
@@ -35,9 +37,9 @@ func NewBluetoothServer(
 ) (*grpc.Server, error) {
 	s := grpc.NewServer()
 	impl := &Implementation{
-		MacAddressService: macAddressService,
-		SocketService:     socketService,
-		DatabaseService:   dbService,
+		macAddressService: macAddressService,
+		socketService:     socketService,
+		databaseService:   dbService,
 	}
 
 	pb.RegisterBluetoothServer(s, impl)

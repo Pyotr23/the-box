@@ -19,7 +19,7 @@ func (impl *Implementation) RegisterDevice(
 	if req.GetMacAddress() == "" {
 		return nil, status.Error(codes.InvalidArgument, "empty mac address")
 	}
-	if err := impl.DatabaseService.RegisterDevice(ctx, req.Name, req.MacAddress); err != nil {
+	if err := impl.databaseService.RegisterDevice(ctx, req.Name, req.MacAddress); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &empty.Empty{}, nil

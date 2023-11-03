@@ -10,7 +10,7 @@ import (
 	bt "tinygo.org/x/bluetooth"
 )
 
-const maxScanDuration = time.Second * 3
+const maxScanDuration = time.Millisecond * 4500
 
 type Client struct {
 	adapter *bt.Adapter
@@ -23,8 +23,8 @@ func NewMacAddressClient() (Client, error) {
 	}, adapter.Enable()
 }
 
-func (c Client) GetAddressesByName(deviceNames []string) (map[string][]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), maxScanDuration)
+func (c Client) GetAddressesByName(ctx context.Context, deviceNames []string) (map[string][]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, maxScanDuration)
 	defer cancel()
 
 	log.Printf("scanning for %v...", deviceNames)

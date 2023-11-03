@@ -51,9 +51,9 @@ func (Repository) GetByMacAddresses(ctx context.Context, macAddresses []string) 
 		return nil, nil
 	}
 
-	placeholderString, genericMacAddresses := getPlaceholdersString[string](macAddresses)
-	q := fmt.Sprintf(
-		`select *
+	placeholderString, genericMacAddresses := getQueryInfo[string](macAddresses)
+	q := fmt.Sprintf(`
+			select *
 			from device
 			where mac in (%s)`,
 		placeholderString,
@@ -153,7 +153,7 @@ func getPreparedStatement(ctx context.Context, query string) (*sql.Stmt, error) 
 	return stm, nil
 }
 
-func getPlaceholdersString[T any](sl []T) (string, []any) {
+func getQueryInfo[T any](sl []T) (string, []any) {
 	if len(sl) == 0 {
 		return "", nil
 	}

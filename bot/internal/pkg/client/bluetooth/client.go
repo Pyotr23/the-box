@@ -8,6 +8,7 @@ import (
 	"time"
 
 	b "github.com/Pyotr23/the-box/bluetooth-api/pkg/pb/bluetooth"
+	"github.com/Pyotr23/the-box/bot/internal/pkg/model"
 	common "github.com/Pyotr23/the-box/common/pkg/config"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -20,7 +21,8 @@ const (
 )
 
 var (
-	defaultDuration = time.Second * 5
+	defaultDuration    = time.Second * 5
+	longDefaultDuraion = time.Second * 10
 )
 
 type BluetoothClient interface{}
@@ -48,6 +50,30 @@ func NewClient() (*Client, error) {
 	return &Client{
 		api: b.NewBluetoothClient(cc),
 	}, nil
+}
+
+func (c *Client) DevicesList(ctx context.Context, deviceNames []string) ([]model.Device, error) {
+	ctx, cancel := context.WithTimeout(ctx, longDefaultDuraion)
+	defer cancel()
+
+	req := &b.DevicesListRequest{
+		DeviceTypes: deviceNames,
+	}
+	resp, err := c.api.DevicesList(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("api call: %w", err)
+	}
+
+	var res = make([]model.Device, 0, len(resp.GetDevices()))
+	for _, d := range resp.GetDevices() {
+		res = append(res, model.Device{
+			ID:         int(d.ID),
+			MacAddress: d.MacAddress,
+			Name:       d.Name,
+		})
+	}
+
+	return res, nil
 }
 
 func (c *Client) Search(ctx context.Context, deviceNames []string) ([]string, error) {

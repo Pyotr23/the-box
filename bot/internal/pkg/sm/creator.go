@@ -13,26 +13,32 @@ import (
 )
 
 const (
-	blinkCommand    string = "blink"
-	searchCommand   string = "search"
-	registerCommand string = "register"
+	blinkCommand    botCommand = "blink"
+	searchCommand   botCommand = "search"
+	registerCommand botCommand = "register"
 
 	leavePrefix = "leave_"
 	enterPrefix = "enter_"
 
 	eventKey = "event"
+
+	finishState = "finish"
 )
+
+type botCommand string
 
 type bluetoothService interface {
 	Search(ctx context.Context) ([]string, error)
 	Blink(ctx context.Context, addr string) error
 	RegisterDevice(ctx context.Context, name, macAddress string) error
+	DevicesMap(ctx context.Context) (map[string]model.Device, error)
 }
 
 type fsmCreator struct {
-	service      bluetoothService
-	textChatIdCh chan<- model.TextChatID
-	keyboardCh   chan<- model.Keyboard
+	service        bluetoothService
+	textChatIdCh   chan<- model.TextChatID
+	keyboardCh     chan<- model.Keyboard
+	smByBotCommand map[botCommand]func() *fsm.FSM
 }
 
 func newFsmCreator(
@@ -40,11 +46,17 @@ func newFsmCreator(
 	textChatIdCh chan<- model.TextChatID,
 	keyboarCh chan<- model.Keyboard,
 ) *fsmCreator {
-	return &fsmCreator{
+	c := &fsmCreator{
 		service:      service,
 		textChatIdCh: textChatIdCh,
 		keyboardCh:   keyboarCh,
 	}
+	c.smByBotCommand = map[botCommand]func() *fsm.FSM{
+		searchCommand:   c.newSearchFSM,
+		blinkCommand:    c.newBlinkFSM,
+		registerCommand: c.newRegisterDeviceFSM,
+	}
+	return c
 }
 
 func (c *fsmCreator) create(command string) (*fsm.FSM, error) {
@@ -52,16 +64,11 @@ func (c *fsmCreator) create(command string) (*fsm.FSM, error) {
 		return nil, fmt.Errorf("too short command '%s'", command)
 	}
 
-	switch command[1:] {
-	case searchCommand:
-		return c.newSearchFSM(), nil
-	case blinkCommand:
-		return c.newBlinkFSM(), nil
-	case registerCommand:
-		return c.newRegisterDeviceFSM(), nil
-	default:
-		return nil, fmt.Errorf("unknown command '%s'", command)
+	if create, ok := c.smByBotCommand[botCommand(command[1:])]; ok {
+		return create(), nil
 	}
+
+	return nil, fmt.Errorf("unknown command '%s'", command)
 }
 
 func (c *fsmCreator) newSearchFSM() *fsm.FSM {
@@ -74,7 +81,7 @@ func (c *fsmCreator) newSearchFSM() *fsm.FSM {
 			{
 				Name: searchEvent,
 				Src:  []string{startState},
-				Dst:  "finish",
+				Dst:  finishState,
 			},
 		},
 		fsm.Callbacks{
@@ -90,14 +97,25 @@ func (c *fsmCreator) newSearchFSM() *fsm.FSM {
 					return
 				}
 
-				macAddresses, err := c.service.Search(ctx)
+				devices, err := c.service.DevicesMap(ctx)
 				if err != nil {
 					err = fmt.Errorf("search: %w", err)
 					return
 				}
 
+				var aliases = make([]string, 0, len(devices))
+				for _, d := range devices {
+					var alias string
+					if d.Name == "" {
+						alias = d.MacAddress
+					} else {
+						alias = d.Name
+					}
+					aliases = append(aliases, alias)
+				}
+
 				c.textChatIdCh <- model.TextChatID{
-					Text:   strings.Join(macAddresses, ","),
+					Text:   strings.Join(aliases, ","),
 					ChatID: chatID,
 				}
 

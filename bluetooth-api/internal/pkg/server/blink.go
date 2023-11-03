@@ -16,7 +16,7 @@ func (impl *Implementation) Blink(ctx context.Context, in *empty.Empty) (*empty.
 		return nil, status.Error(codes.InvalidArgument, "empty mac address")
 	}
 
-	if err := impl.SocketService.Blink(ctx, addrs[0]); err != nil {
+	if err := impl.socketService.Blink(ctx, addrs[0]); err != nil {
 		return nil, status.Errorf(codes.Internal, "blink: %s", err)
 	}
 
