@@ -10,6 +10,7 @@ type (
 	bluetoothRepository interface {
 		UpsertDevice(ctx context.Context, name, macAddress string) error
 		GetByMacAddresses(ctx context.Context, macAddresses []string) ([]model.DbDevice, error)
+		DeleteDevice(ctx context.Context, id int) error
 	}
 
 	Service struct {
@@ -25,6 +26,10 @@ func NewDbService(repo bluetoothRepository) *Service {
 
 func (s *Service) RegisterDevice(ctx context.Context, name, address string) error {
 	return s.repo.UpsertDevice(ctx, name, address)
+}
+
+func (s *Service) UnregisterDevice(ctx context.Context, id int) error {
+	return s.repo.DeleteDevice(ctx, id)
 }
 
 func (s *Service) GetDeviceByAddressMap(

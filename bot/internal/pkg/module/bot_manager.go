@@ -135,11 +135,14 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 			var message = tgbotapi.NewMessage(keyboard.ChatID, keyboard.Message)
 			var keyboardButtons = make([]tgbotapi.InlineKeyboardButton, 0, len(keyboard.Buttons))
 			for _, b := range keyboard.Buttons {
-				keyboardButtons = append(keyboardButtons, tgbotapi.NewInlineKeyboardButtonData(b.Key, b.Key))
+				keyboardButtons = append(keyboardButtons, tgbotapi.NewInlineKeyboardButtonData(b.Key, b.Value))
 			}
 			message.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboardButtons)
 			if _, err := b.api.Send(message); err != nil {
-				log.Printf("send one time reply keyboard fail: %s", err)
+				b.textChatIdCh <- model.TextChatID{
+					ChatID: keyboard.ChatID,
+					Text:   fmt.Sprintf("send one time reply keyboard fail: %s", err),
+				}
 			}
 		}
 	}()

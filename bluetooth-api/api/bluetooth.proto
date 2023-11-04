@@ -8,6 +8,7 @@ service Bluetooth {
     rpc Search(SearchRequest) returns (SearchResponse);
     rpc Blink(google.protobuf.Empty) returns (google.protobuf.Empty);
     rpc RegisterDevice(RegisterDeviceRequest) returns (google.protobuf.Empty);
+    rpc UnregisterDevice(UnregisterDeviceRequest) returns (google.protobuf.Empty);
     rpc DevicesList(DevicesListRequest) returns (DevicesListResponse);
 }
 
@@ -30,6 +31,10 @@ message SearchRequest {
 
 message SearchResponse {
     repeated string MacAddresses = 1;
+}
+
+message UnregisterDeviceRequest {
+    int32 ID = 1;
 }
 
 message RegisterDeviceRequest {

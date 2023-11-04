@@ -22,10 +22,7 @@ func NewSocketService() *Service {
 	}
 }
 
-func (s *Service) Blink(ctx context.Context, macAddress string) error {
-	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
-	defer cancel()
-
+func (s *Service) Blink(_ context.Context, macAddress string) error {
 	skt, err := s.getConnectedSocket(macAddress)
 	if err != nil {
 		return fmt.Errorf("get connected socket: %w", err)

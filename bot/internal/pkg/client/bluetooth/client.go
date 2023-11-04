@@ -92,7 +92,7 @@ func (c *Client) Search(ctx context.Context, deviceNames []string) ([]string, er
 }
 
 func (c *Client) Blink(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, defaultDuration)
+	ctx, cancel := context.WithTimeout(ctx, longDefaultDuraion)
 	defer cancel()
 
 	if _, err := c.api.Blink(ctx, &emptypb.Empty{}); err != nil {
@@ -111,6 +111,20 @@ func (c *Client) RegisterDevice(ctx context.Context, name, address string) error
 		MacAddress: address,
 	}
 	if _, err := c.api.RegisterDevice(ctx, req); err != nil {
+		return fmt.Errorf("api call: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) UnregisterDevice(ctx context.Context, id int) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultDuration)
+	defer cancel()
+
+	req := &b.UnregisterDeviceRequest{
+		ID: int32(id),
+	}
+	if _, err := c.api.UnregisterDevice(ctx, req); err != nil {
 		return fmt.Errorf("api call: %w", err)
 	}
 

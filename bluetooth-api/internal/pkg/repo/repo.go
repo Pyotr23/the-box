@@ -46,6 +46,14 @@ func (Repository) UpsertDevice(ctx context.Context, name, macAddress string) err
 	return exec(ctx, q, macAddress, name, name)
 }
 
+func (Repository) DeleteDevice(ctx context.Context, id int) error {
+	const q = `
+		delete from device
+		where id = ?`
+
+	return exec(ctx, q, id)
+}
+
 func (Repository) GetByMacAddresses(ctx context.Context, macAddresses []string) ([]model.DbDevice, error) {
 	if len(macAddresses) == 0 {
 		return nil, nil

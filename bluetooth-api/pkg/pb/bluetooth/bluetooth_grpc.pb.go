@@ -20,10 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Bluetooth_Search_FullMethodName         = "/Bluetooth/Search"
-	Bluetooth_Blink_FullMethodName          = "/Bluetooth/Blink"
-	Bluetooth_RegisterDevice_FullMethodName = "/Bluetooth/RegisterDevice"
-	Bluetooth_DevicesList_FullMethodName    = "/Bluetooth/DevicesList"
+	Bluetooth_Search_FullMethodName           = "/Bluetooth/Search"
+	Bluetooth_Blink_FullMethodName            = "/Bluetooth/Blink"
+	Bluetooth_RegisterDevice_FullMethodName   = "/Bluetooth/RegisterDevice"
+	Bluetooth_UnregisterDevice_FullMethodName = "/Bluetooth/UnregisterDevice"
+	Bluetooth_DevicesList_FullMethodName      = "/Bluetooth/DevicesList"
 )
 
 // BluetoothClient is the client API for Bluetooth service.
@@ -33,6 +34,7 @@ type BluetoothClient interface {
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
 	Blink(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
 	RegisterDevice(ctx context.Context, in *RegisterDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	UnregisterDevice(ctx context.Context, in *UnregisterDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	DevicesList(ctx context.Context, in *DevicesListRequest, opts ...grpc.CallOption) (*DevicesListResponse, error)
 }
 
@@ -71,6 +73,15 @@ func (c *bluetoothClient) RegisterDevice(ctx context.Context, in *RegisterDevice
 	return out, nil
 }
 
+func (c *bluetoothClient) UnregisterDevice(ctx context.Context, in *UnregisterDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, Bluetooth_UnregisterDevice_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *bluetoothClient) DevicesList(ctx context.Context, in *DevicesListRequest, opts ...grpc.CallOption) (*DevicesListResponse, error) {
 	out := new(DevicesListResponse)
 	err := c.cc.Invoke(ctx, Bluetooth_DevicesList_FullMethodName, in, out, opts...)
@@ -87,6 +98,7 @@ type BluetoothServer interface {
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
 	Blink(context.Context, *empty.Empty) (*empty.Empty, error)
 	RegisterDevice(context.Context, *RegisterDeviceRequest) (*empty.Empty, error)
+	UnregisterDevice(context.Context, *UnregisterDeviceRequest) (*empty.Empty, error)
 	DevicesList(context.Context, *DevicesListRequest) (*DevicesListResponse, error)
 	mustEmbedUnimplementedBluetoothServer()
 }
@@ -103,6 +115,9 @@ func (UnimplementedBluetoothServer) Blink(context.Context, *empty.Empty) (*empty
 }
 func (UnimplementedBluetoothServer) RegisterDevice(context.Context, *RegisterDeviceRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterDevice not implemented")
+}
+func (UnimplementedBluetoothServer) UnregisterDevice(context.Context, *UnregisterDeviceRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnregisterDevice not implemented")
 }
 func (UnimplementedBluetoothServer) DevicesList(context.Context, *DevicesListRequest) (*DevicesListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DevicesList not implemented")
@@ -174,6 +189,24 @@ func _Bluetooth_RegisterDevice_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Bluetooth_UnregisterDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnregisterDeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BluetoothServer).UnregisterDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bluetooth_UnregisterDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BluetoothServer).UnregisterDevice(ctx, req.(*UnregisterDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Bluetooth_DevicesList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DevicesListRequest)
 	if err := dec(in); err != nil {
@@ -210,6 +243,10 @@ var Bluetooth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RegisterDevice",
 			Handler:    _Bluetooth_RegisterDevice_Handler,
+		},
+		{
+			MethodName: "UnregisterDevice",
+			Handler:    _Bluetooth_UnregisterDevice_Handler,
 		},
 		{
 			MethodName: "DevicesList",

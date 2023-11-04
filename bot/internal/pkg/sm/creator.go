@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/Pyotr23/the-box/bot/internal/pkg/helper"
@@ -13,9 +14,10 @@ import (
 )
 
 const (
-	blinkCommand    botCommand = "blink"
-	searchCommand   botCommand = "search"
-	registerCommand botCommand = "register"
+	blinkCommand      botCommand = "blink"
+	searchCommand     botCommand = "search"
+	registerCommand   botCommand = "register"
+	unregisterCommand botCommand = "unregister"
 
 	leavePrefix = "leave_"
 	enterPrefix = "enter_"
@@ -31,7 +33,10 @@ type bluetoothService interface {
 	Search(ctx context.Context) ([]string, error)
 	Blink(ctx context.Context, addr string) error
 	RegisterDevice(ctx context.Context, name, macAddress string) error
+	UnregisterDevice(ctx context.Context, id int) error
 	DevicesMap(ctx context.Context) (map[string]model.Device, error)
+	RegisteredDevicesMap(ctx context.Context) (map[string]model.Device, error)
+	GetDeviceAliases(ctx context.Context) ([]string, error)
 }
 
 type fsmCreator struct {
@@ -52,9 +57,10 @@ func newFsmCreator(
 		keyboardCh:   keyboarCh,
 	}
 	c.smByBotCommand = map[botCommand]func() *fsm.FSM{
-		searchCommand:   c.newSearchFSM,
-		blinkCommand:    c.newBlinkFSM,
-		registerCommand: c.newRegisterDeviceFSM,
+		searchCommand:     c.newSearchFSM,
+		blinkCommand:      c.newBlinkFSM,
+		registerCommand:   c.newRegisterDeviceFSM,
+		unregisterCommand: c.newUnregisterDeviceFSM,
 	}
 	return c
 }
@@ -97,21 +103,10 @@ func (c *fsmCreator) newSearchFSM() *fsm.FSM {
 					return
 				}
 
-				devices, err := c.service.DevicesMap(ctx)
+				aliases, err := c.service.GetDeviceAliases(ctx)
 				if err != nil {
-					err = fmt.Errorf("search: %w", err)
+					err = fmt.Errorf("get devices aliases: %w", err)
 					return
-				}
-
-				var aliases = make([]string, 0, len(devices))
-				for _, d := range devices {
-					var alias string
-					if d.Name == "" {
-						alias = d.MacAddress
-					} else {
-						alias = d.Name
-					}
-					aliases = append(aliases, alias)
 				}
 
 				c.textChatIdCh <- model.TextChatID{
@@ -170,22 +165,28 @@ func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
 					return
 				}
 
-				macAddresses, err := c.service.Search(ctx)
+				deviceByAddress, err := c.service.DevicesMap(ctx)
 				if err != nil {
-					err = fmt.Errorf("search: %w", err)
+					err = fmt.Errorf("devices map: %w", err)
 					return
 				}
 
-				if len(macAddresses) == 0 {
+				if len(deviceByAddress) == 0 {
 					return
 				}
 
-				var buttons = make([]model.Button, 0, len(macAddresses))
-				for _, ma := range macAddresses {
+				var buttons = make([]model.Button, 0, len(deviceByAddress))
+				for addr, d := range deviceByAddress {
+					var key string
+					if d.ID > 0 {
+						key = d.Name
+					} else {
+						key = d.MacAddress
+					}
 					buttons = append(buttons,
 						model.Button{
-							Key:   ma,
-							Value: ma,
+							Key:   key,
+							Value: addr,
 						},
 					)
 				}
@@ -286,6 +287,133 @@ func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
 	return sm
 }
 
+func (c *fsmCreator) newUnregisterDeviceFSM() *fsm.FSM {
+	const (
+		startState         = "start"
+		choiceWaitingState = "choice_waiting"
+		nameWaitingState   = "name_wating"
+
+		searchEvent     = "search"
+		unregisterEvent = "unregister"
+		notFoundEvent   = "not_found"
+
+		macKey = "address"
+	)
+	var sm = fsm.NewFSM(startState,
+		fsm.Events{
+			{
+				Name: searchEvent,
+				Src:  []string{startState},
+				Dst:  choiceWaitingState,
+			},
+			{
+				Name: unregisterEvent,
+				Src:  []string{choiceWaitingState},
+				Dst:  finishState,
+			},
+			{
+				Name: notFoundEvent,
+				Src:  []string{startState},
+				Dst:  finishState,
+			},
+		},
+		fsm.Callbacks{
+			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				chatID := helper.ChatIdFromCtx(ctx)
+				if chatID == 0 {
+					log.Print(model.ErrMessageNoChatID)
+					return
+				}
+
+				deviceByAddress, err := c.service.RegisteredDevicesMap(ctx)
+				if err != nil {
+					err = fmt.Errorf("devices map: %w", err)
+					return
+				}
+
+				if len(deviceByAddress) == 0 {
+					c.textChatIdCh <- model.TextChatID{
+						ChatID: chatID,
+						Text:   "registered devices not found",
+					}
+
+					e.FSM.SetMetadata(eventKey, notFoundEvent)
+
+					return
+				}
+
+				var buttons = make([]model.Button, 0, len(deviceByAddress))
+				for _, d := range deviceByAddress {
+					buttons = append(buttons,
+						model.Button{
+							Key:   d.Name,
+							Value: strconv.Itoa(d.ID),
+						},
+					)
+				}
+
+				c.keyboardCh <- model.Keyboard{
+					ChatID:  chatID,
+					Message: "choose the device:",
+					Buttons: buttons,
+				}
+
+				e.FSM.SetMetadata(eventKey, unregisterEvent)
+			},
+			withLeavePrefix(choiceWaitingState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				chatID := helper.ChatIdFromCtx(ctx)
+				if chatID == 0 {
+					log.Print(model.ErrMessageNoChatID)
+					return
+				}
+
+				if len(e.Args) == 0 {
+					err = errors.New("no args")
+					return
+				}
+
+				userChoice, ok := e.Args[0].(string)
+				if !ok {
+					err = errors.New("first arg not string")
+					return
+				}
+
+				id, err := strconv.Atoi(userChoice)
+				if err != nil {
+					err = errors.New("user choice not integer")
+					return
+				}
+
+				if err = c.service.UnregisterDevice(ctx, id); err != nil {
+					err = fmt.Errorf("unregister device: %w", err)
+					return
+				}
+
+				c.textChatIdCh <- model.TextChatID{
+					ChatID: chatID,
+					Text:   "device unregistered",
+				}
+
+				return
+			},
+		},
+	)
+
+	sm.SetMetadata(eventKey, searchEvent)
+
+	return sm
+}
+
 func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 	const (
 		startState         = "start"
@@ -319,22 +447,28 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 					return
 				}
 
-				macAddresses, err := c.service.Search(ctx)
+				deviceByAddress, err := c.service.DevicesMap(ctx)
 				if err != nil {
-					err = fmt.Errorf("search: %w", err)
+					err = fmt.Errorf("devices map: %w", err)
 					return
 				}
 
-				if len(macAddresses) == 0 {
+				if len(deviceByAddress) == 0 {
 					return
 				}
 
-				var buttons = make([]model.Button, 0, len(macAddresses))
-				for _, ma := range macAddresses {
+				var buttons = make([]model.Button, 0, len(deviceByAddress))
+				for addr, d := range deviceByAddress {
+					var key string
+					if d.ID > 0 {
+						key = d.Name
+					} else {
+						key = d.MacAddress
+					}
 					buttons = append(buttons,
 						model.Button{
-							Key:   ma,
-							Value: ma,
+							Key:   key,
+							Value: addr,
 						},
 					)
 				}

@@ -15,6 +15,7 @@ type (
 
 	dbService interface {
 		RegisterDevice(ctx context.Context, name, address string) error
+		UnregisterDevice(ctx context.Context, id int) error
 		GetDeviceByAddressMap(ctx context.Context, addresses []string) (map[string]model.Device, error)
 	}
 
