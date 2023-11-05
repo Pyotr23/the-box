@@ -24,6 +24,7 @@ require (
 	golang.org/x/term v0.11.0 // indirect
 	google.golang.org/grpc v1.59.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
 require (

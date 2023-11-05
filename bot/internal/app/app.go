@@ -79,8 +79,6 @@ func (a *App) init(ctx context.Context) error {
 		module.NewNgrokTunnel(),
 		module.NewWebhook(),
 		module.NewBotManager(),
-		// newBluetoothClient(),
-		// newMessage(),
 	}
 
 	for _, module := range a.modules {
