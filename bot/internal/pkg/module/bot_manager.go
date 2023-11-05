@@ -115,6 +115,7 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 			ctx := helper.CtxWithChatIdValue(context.Background(), chatID)
 
 			if err := process(ctx, text); err != nil {
+				log.Print(err.Error())
 				b.textChatIdCh <- model.TextChatID{
 					Text:   err.Error(),
 					ChatID: chatID,

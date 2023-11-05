@@ -11,7 +11,7 @@ import (
 )
 
 type creator interface {
-	create(command string) (*fsm.FSM, error)
+	create(chatID int64, command string) (*fsm.FSM, error)
 }
 
 type fsmProcessor struct {
@@ -38,7 +38,7 @@ func (p *fsmProcessor) GetCommandProcessor() func(ctx context.Context, command s
 			return errors.New("chat id not found in context")
 		}
 
-		sm, err := p.creator.create(command)
+		sm, err := p.creator.create(chatID, command)
 		if err != nil {
 			return fmt.Errorf("create fsm: %w", err)
 		}

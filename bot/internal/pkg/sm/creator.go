@@ -23,7 +23,8 @@ const (
 	leavePrefix = "leave_"
 	enterPrefix = "enter_"
 
-	eventKey = "event"
+	eventKey  = "event"
+	chatIdKey = "chatID"
 
 	startState  = "start"
 	finishState = "finish"
@@ -50,7 +51,8 @@ type fsmCreator struct {
 	settingsWriter settingsWriter
 	textChatIdCh   chan<- model.TextChatID
 	keyboardCh     chan<- model.Keyboard
-	smByBotCommand map[botCommand]func() *fsm.FSM
+	smByBotCommand map[botCommand]func(chatID int64) *fsm.FSM
+	chatID         int64
 }
 
 func newFsmCreator(
@@ -65,7 +67,7 @@ func newFsmCreator(
 		textChatIdCh:   textChatIdCh,
 		keyboardCh:     keyboarCh,
 	}
-	c.smByBotCommand = map[botCommand]func() *fsm.FSM{
+	c.smByBotCommand = map[botCommand]func(chatID int64) *fsm.FSM{
 		searchCommand:     c.newSearchFSM,
 		blinkCommand:      c.newBlinkFSM,
 		registerCommand:   c.newRegisterDeviceFSM,
@@ -75,19 +77,19 @@ func newFsmCreator(
 	return c
 }
 
-func (c *fsmCreator) create(command string) (*fsm.FSM, error) {
+func (c *fsmCreator) create(chatID int64, command string) (*fsm.FSM, error) {
 	if len(command) < 2 {
 		return nil, fmt.Errorf("too short command '%s'", command)
 	}
 
 	if create, ok := c.smByBotCommand[botCommand(command[1:])]; ok {
-		return create(), nil
+		return create(chatID), nil
 	}
 
 	return nil, fmt.Errorf("unknown command '%s'", command)
 }
 
-func (c *fsmCreator) newSetDeviceFSM() *fsm.FSM {
+func (c *fsmCreator) newSetDeviceFSM(chatID int64) *fsm.FSM {
 	const (
 		idWaitingState  = "id_waiting"
 		gotAliasesEvent = "aliasese_got"
@@ -113,12 +115,6 @@ func (c *fsmCreator) newSetDeviceFSM() *fsm.FSM {
 				defer func() {
 					e.Err = err
 				}()
-
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
 
 				deviceByAddress, err := c.service.DevicesMap(ctx)
 				if err != nil {
@@ -150,11 +146,7 @@ func (c *fsmCreator) newSetDeviceFSM() *fsm.FSM {
 					)
 				}
 
-				c.keyboardCh <- model.Keyboard{
-					ChatID:  chatID,
-					Message: "choose current device:",
-					Buttons: buttons,
-				}
+				c.sendButtons(e.FSM, "choose current device:", buttons)
 
 				e.FSM.SetMetadata(eventKey, idWaitedEvent)
 
@@ -165,12 +157,6 @@ func (c *fsmCreator) newSetDeviceFSM() *fsm.FSM {
 				defer func() {
 					e.Err = err
 				}()
-
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
 
 				if len(e.Args) == 0 {
 					err = errors.New("no args")
@@ -202,10 +188,7 @@ func (c *fsmCreator) newSetDeviceFSM() *fsm.FSM {
 					return
 				}
 
-				c.textChatIdCh <- model.TextChatID{
-					Text:   "current device set",
-					ChatID: chatID,
-				}
+				c.sendText(e.FSM, "current device set")
 
 				return
 			},
@@ -213,11 +196,12 @@ func (c *fsmCreator) newSetDeviceFSM() *fsm.FSM {
 	)
 
 	sm.SetMetadata(eventKey, gotAliasesEvent)
+	sm.SetMetadata(chatIdKey, chatID)
 
 	return sm
 }
 
-func (c *fsmCreator) newSearchFSM() *fsm.FSM {
+func (c *fsmCreator) newSearchFSM(chatID int64) *fsm.FSM {
 	const (
 		searchEvent = "search"
 	)
@@ -236,22 +220,13 @@ func (c *fsmCreator) newSearchFSM() *fsm.FSM {
 					e.Err = err
 				}()
 
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
-
 				aliases, err := c.service.GetDeviceAliases(ctx)
 				if err != nil {
 					err = fmt.Errorf("get devices aliases: %w", err)
 					return
 				}
 
-				c.textChatIdCh <- model.TextChatID{
-					Text:   strings.Join(aliases, ","),
-					ChatID: chatID,
-				}
+				c.sendText(e.FSM, strings.Join(aliases, ", "))
 
 				return
 			},
@@ -259,11 +234,12 @@ func (c *fsmCreator) newSearchFSM() *fsm.FSM {
 	)
 
 	sm.SetMetadata(eventKey, searchEvent)
+	sm.SetMetadata(chatIdKey, chatID)
 
 	return sm
 }
 
-func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
+func (c *fsmCreator) newRegisterDeviceFSM(chatID int64) *fsm.FSM {
 	const (
 		choiceWaitingState = "choice_waiting"
 		nameWaitingState   = "name_wating"
@@ -343,12 +319,6 @@ func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
 					e.Err = err
 				}()
 
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
-
 				if len(e.Args) == 0 {
 					err = errors.New("no args")
 					return
@@ -362,10 +332,7 @@ func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
 
 				e.FSM.SetMetadata(macKey, userChoice)
 
-				c.textChatIdCh <- model.TextChatID{
-					ChatID: chatID,
-					Text:   "enter device name",
-				}
+				c.sendText(e.FSM, "enter device name:")
 
 				e.FSM.SetMetadata(eventKey, registerEvent)
 
@@ -376,12 +343,6 @@ func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
 				defer func() {
 					e.Err = err
 				}()
-
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
 
 				if len(e.Args) == 0 {
 					err = errors.New("no args")
@@ -410,10 +371,7 @@ func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
 					return
 				}
 
-				c.textChatIdCh <- model.TextChatID{
-					ChatID: chatID,
-					Text:   "device registered",
-				}
+				c.sendText(e.FSM, "device registered")
 
 				return
 			},
@@ -421,11 +379,12 @@ func (c *fsmCreator) newRegisterDeviceFSM() *fsm.FSM {
 	)
 
 	sm.SetMetadata(eventKey, searchEvent)
+	sm.SetMetadata(chatIdKey, chatID)
 
 	return sm
 }
 
-func (c *fsmCreator) newUnregisterDeviceFSM() *fsm.FSM {
+func (c *fsmCreator) newUnregisterDeviceFSM(chatID int64) *fsm.FSM {
 	const (
 		choiceWaitingState = "choice_waiting"
 		nameWaitingState   = "name_wating"
@@ -461,12 +420,6 @@ func (c *fsmCreator) newUnregisterDeviceFSM() *fsm.FSM {
 					e.Err = err
 				}()
 
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
-
 				deviceByAddress, err := c.service.RegisteredDevicesMap(ctx)
 				if err != nil {
 					err = fmt.Errorf("devices map: %w", err)
@@ -474,10 +427,7 @@ func (c *fsmCreator) newUnregisterDeviceFSM() *fsm.FSM {
 				}
 
 				if len(deviceByAddress) == 0 {
-					c.textChatIdCh <- model.TextChatID{
-						ChatID: chatID,
-						Text:   "registered devices not found",
-					}
+					c.sendText(e.FSM, "registered devices not found")
 
 					e.FSM.SetMetadata(eventKey, notFoundEvent)
 
@@ -494,11 +444,7 @@ func (c *fsmCreator) newUnregisterDeviceFSM() *fsm.FSM {
 					)
 				}
 
-				c.keyboardCh <- model.Keyboard{
-					ChatID:  chatID,
-					Message: "choose the device:",
-					Buttons: buttons,
-				}
+				c.sendButtons(e.FSM, "choose the device:", buttons)
 
 				e.FSM.SetMetadata(eventKey, unregisterEvent)
 			},
@@ -507,12 +453,6 @@ func (c *fsmCreator) newUnregisterDeviceFSM() *fsm.FSM {
 				defer func() {
 					e.Err = err
 				}()
-
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
 
 				if len(e.Args) == 0 {
 					err = errors.New("no args")
@@ -536,10 +476,7 @@ func (c *fsmCreator) newUnregisterDeviceFSM() *fsm.FSM {
 					return
 				}
 
-				c.textChatIdCh <- model.TextChatID{
-					ChatID: chatID,
-					Text:   "device unregistered",
-				}
+				c.sendText(e.FSM, "device unregistered")
 
 				return
 			},
@@ -547,17 +484,18 @@ func (c *fsmCreator) newUnregisterDeviceFSM() *fsm.FSM {
 	)
 
 	sm.SetMetadata(eventKey, searchEvent)
+	sm.SetMetadata(chatIdKey, chatID)
 
 	return sm
 }
 
-func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
+func (c *fsmCreator) newBlinkFSM(chatID int64) *fsm.FSM {
 	const (
 		choiceWaitingState = "choice_waiting"
 		searchEvent        = "search"
 		choiceEvent        = "choice"
 	)
-	var sm = fsm.NewFSM("start",
+	var sm = fsm.NewFSM(startState,
 		fsm.Events{
 			{
 				Name: searchEvent,
@@ -567,7 +505,7 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 			{
 				Name: choiceEvent,
 				Src:  []string{choiceWaitingState},
-				Dst:  "finish",
+				Dst:  finishState,
 			},
 		},
 		fsm.Callbacks{
@@ -576,12 +514,6 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 				defer func() {
 					e.Err = err
 				}()
-
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
 
 				deviceByAddress, err := c.service.DevicesMap(ctx)
 				if err != nil {
@@ -609,11 +541,7 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 					)
 				}
 
-				c.keyboardCh <- model.Keyboard{
-					ChatID:  chatID,
-					Message: "choose the device:",
-					Buttons: buttons,
-				}
+				c.sendButtons(e.FSM, "choose the device:", buttons)
 
 				e.FSM.SetMetadata(eventKey, choiceEvent)
 			},
@@ -622,12 +550,6 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 				defer func() {
 					e.Err = err
 				}()
-
-				chatID := helper.ChatIdFromCtx(ctx)
-				if chatID == 0 {
-					log.Print(model.ErrMessageNoChatID)
-					return
-				}
 
 				if len(e.Args) == 0 {
 					err = errors.New("no args")
@@ -645,10 +567,7 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 					return
 				}
 
-				c.textChatIdCh <- model.TextChatID{
-					ChatID: chatID,
-					Text:   "finish blinking",
-				}
+				c.sendText(e.FSM, "finish blinking")
 
 				return
 			},
@@ -656,8 +575,46 @@ func (c *fsmCreator) newBlinkFSM() *fsm.FSM {
 	)
 
 	sm.SetMetadata(eventKey, searchEvent)
+	sm.SetMetadata(chatIdKey, chatID)
 
 	return sm
+}
+
+func getChatID(sm *fsm.FSM) (int64, error) {
+	genericChatID, ok := sm.Metadata(chatIdKey)
+	if !ok {
+		return 0, errors.New("no chat id in metadata")
+	}
+	chatID, ok := genericChatID.(int64)
+	if !ok {
+		return 0, errors.New("chat id in metadat not int")
+	}
+	return chatID, nil
+}
+
+func (c *fsmCreator) sendButtons(sm *fsm.FSM, msg string, buttons []model.Button) {
+	chatID, err := getChatID(sm)
+	if err != nil {
+		log.Print("no chat id in state machine metadata")
+		return
+	}
+	c.keyboardCh <- model.Keyboard{
+		ChatID:  chatID,
+		Message: msg,
+		Buttons: buttons,
+	}
+}
+
+func (c *fsmCreator) sendText(sm *fsm.FSM, msg string) {
+	chatID, err := getChatID(sm)
+	if err != nil {
+		log.Print("no chat id in state machine metadata")
+		return
+	}
+	c.textChatIdCh <- model.TextChatID{
+		ChatID: chatID,
+		Text:   msg,
+	}
 }
 
 func withLeavePrefix(state string) string {
