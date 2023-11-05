@@ -1,4 +1,4 @@
-package config
+package settings
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/Pyotr23/the-box/bot/internal/pkg/model"
 	"gopkg.in/ini.v1"
 )
 
@@ -15,23 +16,29 @@ const (
 	idKey         = "id"
 )
 
-func ReadConfig() (SettingsInfo, error) {
+type Service struct{}
+
+func NewService() Service {
+	return Service{}
+}
+
+func (_ Service) ReadConfig() (model.SettingsInfo, error) {
 	absPath, err := getAbsIniPath()
 	if err != nil {
-		return SettingsInfo{}, fmt.Errorf("get abs ini path: %w", err)
+		return model.SettingsInfo{}, fmt.Errorf("get abs ini path: %w", err)
 	}
 
-	var cfg = new(SettingsInfo)
+	var cfg = new(model.SettingsInfo)
 	if err = ini.MapTo(cfg, absPath); err != nil {
-		return SettingsInfo{}, fmt.Errorf("map to: %w", err)
+		return model.SettingsInfo{}, fmt.Errorf("map to: %w", err)
 	}
 	if cfg == nil {
-		return SettingsInfo{}, errors.New("nil config after mapping")
+		return model.SettingsInfo{}, errors.New("nil config after mapping")
 	}
 	return *cfg, nil
 }
 
-func WriteDeviceID(id int) error {
+func (_ Service) WriteDeviceID(id int) error {
 	absPath, err := getAbsIniPath()
 	if err != nil {
 		return fmt.Errorf("get abs ini path: %w", err)

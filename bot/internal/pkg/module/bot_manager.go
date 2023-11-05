@@ -12,6 +12,7 @@ import (
 	"github.com/Pyotr23/the-box/bot/internal/pkg/helper"
 	"github.com/Pyotr23/the-box/bot/internal/pkg/model"
 	bs "github.com/Pyotr23/the-box/bot/internal/pkg/service/bluetooth"
+	sts "github.com/Pyotr23/the-box/bot/internal/pkg/service/settings"
 	"github.com/Pyotr23/the-box/bot/internal/pkg/sm"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -74,8 +75,9 @@ func (b *botManager) Init(ctx context.Context, app any) (err error) {
 	}
 
 	bluetoothService := bs.NewService(bluetoothClient)
+	settingsService := sts.NewService()
 
-	b.processorGetter = sm.NewFsmProcessor(bluetoothService, b.textChatIdCh, b.keyboardCh)
+	b.processorGetter = sm.NewFsmProcessor(bluetoothService, settingsService, b.textChatIdCh, b.keyboardCh)
 
 	us.SetUpdateChannel(b.bodyCh)
 

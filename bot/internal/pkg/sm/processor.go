@@ -21,12 +21,13 @@ type fsmProcessor struct {
 
 func NewFsmProcessor(
 	bs bluetoothService,
+	sts settingsWriter,
 	textChatIdCh chan<- model.TextChatID,
 	keyboardCh chan<- model.Keyboard,
 ) *fsmProcessor {
 	return &fsmProcessor{
 		fsmByChatID: make(map[int64]*fsm.FSM),
-		creator:     newFsmCreator(bs, textChatIdCh, keyboardCh),
+		creator:     newFsmCreator(bs, sts, textChatIdCh, keyboardCh),
 	}
 }
 
