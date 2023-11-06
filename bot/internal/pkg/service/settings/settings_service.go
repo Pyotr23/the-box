@@ -38,6 +38,22 @@ func (_ Service) ReadConfig() (model.SettingsInfo, error) {
 	return *cfg, nil
 }
 
+func (_ Service) ReadDeviceID() (int, error) {
+	absPath, err := getAbsIniPath()
+	if err != nil {
+		return 0, fmt.Errorf("get abs ini path: %w", err)
+	}
+
+	var cfg = new(model.SettingsInfo)
+	if err = ini.MapTo(cfg, absPath); err != nil {
+		return 0, fmt.Errorf("map to: %w", err)
+	}
+	if cfg == nil {
+		return 0, errors.New("nil config after mapping")
+	}
+	return cfg.Device.ID, nil
+}
+
 func (_ Service) WriteDeviceID(id int) error {
 	absPath, err := getAbsIniPath()
 	if err != nil {

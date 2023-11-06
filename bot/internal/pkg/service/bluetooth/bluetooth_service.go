@@ -22,6 +22,7 @@ type client interface {
 	RegisterDevice(ctx context.Context, name, address string) error
 	UnregisterDevice(ctx context.Context, id int) error
 	DevicesList(ctx context.Context, deviceNames []string) ([]model.Device, error)
+	GetDevicesFullInfo(ctx context.Context, ids []int) ([]model.DeviceInfo, error)
 }
 
 type Service struct {
@@ -32,6 +33,17 @@ func NewService(c client) *Service {
 	return &Service{
 		c: c,
 	}
+}
+
+func (s *Service) GetDeviceFullInfo(ctx context.Context, id int) (model.DeviceInfo, error) {
+	devices, err := s.c.GetDevicesFullInfo(ctx, []int{id})
+	if err != nil {
+		return model.DeviceInfo{}, err
+	}
+	if len(devices) == 0 {
+		return model.DeviceInfo{}, errors.New("device not found")
+	}
+	return devices[0], nil
 }
 
 func (s *Service) DevicesMap(ctx context.Context) (map[string]model.Device, error) {

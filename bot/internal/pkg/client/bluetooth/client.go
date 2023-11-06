@@ -10,6 +10,7 @@ import (
 	b "github.com/Pyotr23/the-box/bluetooth-api/pkg/pb/bluetooth"
 	"github.com/Pyotr23/the-box/bot/internal/pkg/model"
 	common "github.com/Pyotr23/the-box/common/pkg/config"
+	"github.com/Pyotr23/the-box/common/pkg/convert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -129,4 +130,34 @@ func (c *Client) UnregisterDevice(ctx context.Context, id int) error {
 	}
 
 	return nil
+}
+
+func (c *Client) GetDevicesFullInfo(ctx context.Context, ids []int) ([]model.DeviceInfo, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultDuration)
+	defer cancel()
+
+	req := &b.GetDevicesFullInfoRequest{
+		Ids: convert.ConvertIDs[int, int32](ids),
+	}
+	resp, err := c.api.GetDevicesFullInfo(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("api call: %w", err)
+	}
+
+	if len(resp.GetDevices()) == 0 {
+		return nil, nil
+	}
+
+	var res = make([]model.DeviceInfo, 0, len(resp.GetDevices()))
+	for _, d := range resp.GetDevices() {
+		res = append(res, model.DeviceInfo{
+			ID:         int(d.ID),
+			MacAddress: d.MacAddress,
+			Name:       d.Name,
+			CreatedAt:  d.CreatedAt.AsTime(),
+			UpdatedAt:  d.UpdatedAt.AsTime(),
+		})
+	}
+
+	return res, nil
 }

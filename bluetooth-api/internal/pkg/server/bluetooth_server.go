@@ -17,6 +17,7 @@ type (
 		RegisterDevice(ctx context.Context, name, address string) error
 		UnregisterDevice(ctx context.Context, id int) error
 		GetDeviceByAddressMap(ctx context.Context, addresses []string) (map[string]model.Device, error)
+		GetDeviceByIDs(ctx context.Context, ids []int) ([]model.DeviceInfo, error)
 	}
 
 	socketService interface {

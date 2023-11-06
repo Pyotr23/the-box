@@ -5,6 +5,6 @@ type (
 		ID int `ini:"id"`
 	}
 	SettingsInfo struct {
-		DeviceSection `ini:"device"`
+		Device DeviceSection `ini:"device"`
 	}
 )

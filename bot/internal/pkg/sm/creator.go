@@ -14,11 +14,15 @@ import (
 )
 
 const (
-	blinkCommand      botCommand = "blink"
-	searchCommand     botCommand = "search"
+	blinkCommand botCommand = "blink"
+
+	searchCommand botCommand = "search"
+
 	registerCommand   botCommand = "register"
 	unregisterCommand botCommand = "unregister"
-	setDeviceCommand  botCommand = "device_set"
+
+	setDeviceCommand    botCommand = "device_set"
+	activeDeviceCommand botCommand = "active_device"
 
 	leavePrefix = "leave_"
 	enterPrefix = "enter_"
@@ -40,39 +44,42 @@ type bluetoothService interface {
 	DevicesMap(ctx context.Context) (map[string]model.Device, error)
 	RegisteredDevicesMap(ctx context.Context) (map[string]model.Device, error)
 	GetDeviceAliases(ctx context.Context) ([]string, error)
+	GetDeviceFullInfo(ctx context.Context, id int) (model.DeviceInfo, error)
 }
 
-type settingsWriter interface {
+type settingsService interface {
 	WriteDeviceID(id int) error
+	ReadDeviceID() (int, error)
 }
 
 type fsmCreator struct {
-	service        bluetoothService
-	settingsWriter settingsWriter
-	textChatIdCh   chan<- model.TextChatID
-	keyboardCh     chan<- model.Keyboard
-	smByBotCommand map[botCommand]func(chatID int64) *fsm.FSM
-	chatID         int64
+	service         bluetoothService
+	settingsService settingsService
+	textChatIdCh    chan<- model.TextChatID
+	keyboardCh      chan<- model.Keyboard
+	smByBotCommand  map[botCommand]func(chatID int64) *fsm.FSM
+	chatID          int64
 }
 
 func newFsmCreator(
 	service bluetoothService,
-	settingsWriter settingsWriter,
+	settingsWriter settingsService,
 	textChatIdCh chan<- model.TextChatID,
 	keyboarCh chan<- model.Keyboard,
 ) *fsmCreator {
 	c := &fsmCreator{
-		service:        service,
-		settingsWriter: settingsWriter,
-		textChatIdCh:   textChatIdCh,
-		keyboardCh:     keyboarCh,
+		service:         service,
+		settingsService: settingsWriter,
+		textChatIdCh:    textChatIdCh,
+		keyboardCh:      keyboarCh,
 	}
 	c.smByBotCommand = map[botCommand]func(chatID int64) *fsm.FSM{
-		searchCommand:     c.newSearchFSM,
-		blinkCommand:      c.newBlinkFSM,
-		registerCommand:   c.newRegisterDeviceFSM,
-		unregisterCommand: c.newUnregisterDeviceFSM,
-		setDeviceCommand:  c.newSetDeviceFSM,
+		searchCommand:       c.newSearchFSM,
+		blinkCommand:        c.newBlinkFSM,
+		registerCommand:     c.newRegisterDeviceFSM,
+		unregisterCommand:   c.newUnregisterDeviceFSM,
+		setDeviceCommand:    c.newSetDeviceFSM,
+		activeDeviceCommand: c.newActiveDeviceFSM,
 	}
 	return c
 }
@@ -87,6 +94,54 @@ func (c *fsmCreator) create(chatID int64, command string) (*fsm.FSM, error) {
 	}
 
 	return nil, fmt.Errorf("unknown command '%s'", command)
+}
+
+func (c *fsmCreator) newActiveDeviceFSM(chatID int64) *fsm.FSM {
+	const (
+		gotActiveDeviceEvent = "active_device_got"
+	)
+	var sm = fsm.NewFSM(startState,
+		fsm.Events{
+			{
+				Name: gotActiveDeviceEvent,
+				Src:  []string{startState},
+				Dst:  finishState,
+			},
+		},
+		fsm.Callbacks{
+			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				id, err := c.settingsService.ReadDeviceID()
+				if err != nil {
+					err = fmt.Errorf("read device id: %w", err)
+					return
+				}
+				if id == 0 {
+					err = errors.New("no active device id in settings")
+					return
+				}
+
+				device, err := c.service.GetDeviceFullInfo(ctx, id)
+				if err != nil {
+					err = fmt.Errorf("get device full info: %w", err)
+					return
+				}
+
+				c.sendText(e.FSM, fmt.Sprintf("%v", device))
+
+				return
+			},
+		},
+	)
+
+	sm.SetMetadata(eventKey, gotActiveDeviceEvent)
+	sm.SetMetadata(chatIdKey, chatID)
+
+	return sm
 }
 
 func (c *fsmCreator) newSetDeviceFSM(chatID int64) *fsm.FSM {
@@ -183,7 +238,7 @@ func (c *fsmCreator) newSetDeviceFSM(chatID int64) *fsm.FSM {
 					return
 				}
 
-				if err := c.settingsWriter.WriteDeviceID(id); err != nil {
+				if err := c.settingsService.WriteDeviceID(id); err != nil {
 					err = fmt.Errorf("write device id: %w", err)
 					return
 				}

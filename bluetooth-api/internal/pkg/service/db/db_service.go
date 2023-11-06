@@ -10,6 +10,7 @@ type (
 	bluetoothRepository interface {
 		UpsertDevice(ctx context.Context, name, macAddress string) error
 		GetByMacAddresses(ctx context.Context, macAddresses []string) ([]model.DbDevice, error)
+		GetByIDs(ctx context.Context, ids []int) ([]model.DbDevice, error)
 		DeleteDevice(ctx context.Context, id int) error
 	}
 
@@ -55,4 +56,31 @@ func (s *Service) GetDeviceByAddressMap(
 	}
 
 	return m, nil
+}
+
+func (s *Service) GetDeviceByIDs(
+	ctx context.Context,
+	ids []int,
+) ([]model.DeviceInfo, error) {
+	dbDevices, err := s.repo.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(dbDevices) == 0 {
+		return nil, nil
+	}
+
+	var res = make([]model.DeviceInfo, 0, len(dbDevices))
+	for _, d := range dbDevices {
+		res = append(res, model.DeviceInfo{
+			ID:         d.ID,
+			MacAddress: d.MacAddress,
+			Name:       d.Name,
+			CreatedAt:  d.CreatedAt,
+			UpdatedAt:  d.UpdatedAt,
+		})
+	}
+
+	return res, nil
 }

@@ -8,6 +8,7 @@ package bluetooth
 
 import (
 	empty "github.com/golang/protobuf/ptypes/empty"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,6 +22,100 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type GetDevicesFullInfoRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ids []int32 `protobuf:"varint,1,rep,packed,name=Ids,proto3" json:"Ids,omitempty"`
+}
+
+func (x *GetDevicesFullInfoRequest) Reset() {
+	*x = GetDevicesFullInfoRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_bluetooth_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetDevicesFullInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDevicesFullInfoRequest) ProtoMessage() {}
+
+func (x *GetDevicesFullInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_bluetooth_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDevicesFullInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetDevicesFullInfoRequest) Descriptor() ([]byte, []int) {
+	return file_bluetooth_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GetDevicesFullInfoRequest) GetIds() []int32 {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+type GetDevicesFullInfoResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Devices []*GetDevicesFullInfoResponse_Device `protobuf:"bytes,1,rep,name=Devices,proto3" json:"Devices,omitempty"`
+}
+
+func (x *GetDevicesFullInfoResponse) Reset() {
+	*x = GetDevicesFullInfoResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_bluetooth_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetDevicesFullInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDevicesFullInfoResponse) ProtoMessage() {}
+
+func (x *GetDevicesFullInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_bluetooth_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDevicesFullInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetDevicesFullInfoResponse) Descriptor() ([]byte, []int) {
+	return file_bluetooth_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetDevicesFullInfoResponse) GetDevices() []*GetDevicesFullInfoResponse_Device {
+	if x != nil {
+		return x.Devices
+	}
+	return nil
+}
+
 type DevicesListRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -32,7 +127,7 @@ type DevicesListRequest struct {
 func (x *DevicesListRequest) Reset() {
 	*x = DevicesListRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bluetooth_proto_msgTypes[0]
+		mi := &file_bluetooth_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -45,7 +140,7 @@ func (x *DevicesListRequest) String() string {
 func (*DevicesListRequest) ProtoMessage() {}
 
 func (x *DevicesListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bluetooth_proto_msgTypes[0]
+	mi := &file_bluetooth_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +153,7 @@ func (x *DevicesListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DevicesListRequest.ProtoReflect.Descriptor instead.
 func (*DevicesListRequest) Descriptor() ([]byte, []int) {
-	return file_bluetooth_proto_rawDescGZIP(), []int{0}
+	return file_bluetooth_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *DevicesListRequest) GetDeviceTypes() []string {
@@ -79,7 +174,7 @@ type DevicesListResponse struct {
 func (x *DevicesListResponse) Reset() {
 	*x = DevicesListResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bluetooth_proto_msgTypes[1]
+		mi := &file_bluetooth_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -92,7 +187,7 @@ func (x *DevicesListResponse) String() string {
 func (*DevicesListResponse) ProtoMessage() {}
 
 func (x *DevicesListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_bluetooth_proto_msgTypes[1]
+	mi := &file_bluetooth_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -105,7 +200,7 @@ func (x *DevicesListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DevicesListResponse.ProtoReflect.Descriptor instead.
 func (*DevicesListResponse) Descriptor() ([]byte, []int) {
-	return file_bluetooth_proto_rawDescGZIP(), []int{1}
+	return file_bluetooth_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DevicesListResponse) GetDevices() []*DevicesListResponse_Device {
@@ -126,7 +221,7 @@ type SearchRequest struct {
 func (x *SearchRequest) Reset() {
 	*x = SearchRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bluetooth_proto_msgTypes[2]
+		mi := &file_bluetooth_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -139,7 +234,7 @@ func (x *SearchRequest) String() string {
 func (*SearchRequest) ProtoMessage() {}
 
 func (x *SearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bluetooth_proto_msgTypes[2]
+	mi := &file_bluetooth_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -152,7 +247,7 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchRequest.ProtoReflect.Descriptor instead.
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return file_bluetooth_proto_rawDescGZIP(), []int{2}
+	return file_bluetooth_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SearchRequest) GetDeviceNames() []string {
@@ -173,7 +268,7 @@ type SearchResponse struct {
 func (x *SearchResponse) Reset() {
 	*x = SearchResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bluetooth_proto_msgTypes[3]
+		mi := &file_bluetooth_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -186,7 +281,7 @@ func (x *SearchResponse) String() string {
 func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_bluetooth_proto_msgTypes[3]
+	mi := &file_bluetooth_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -199,7 +294,7 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchResponse.ProtoReflect.Descriptor instead.
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return file_bluetooth_proto_rawDescGZIP(), []int{3}
+	return file_bluetooth_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SearchResponse) GetMacAddresses() []string {
@@ -220,7 +315,7 @@ type UnregisterDeviceRequest struct {
 func (x *UnregisterDeviceRequest) Reset() {
 	*x = UnregisterDeviceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bluetooth_proto_msgTypes[4]
+		mi := &file_bluetooth_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -233,7 +328,7 @@ func (x *UnregisterDeviceRequest) String() string {
 func (*UnregisterDeviceRequest) ProtoMessage() {}
 
 func (x *UnregisterDeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bluetooth_proto_msgTypes[4]
+	mi := &file_bluetooth_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -246,7 +341,7 @@ func (x *UnregisterDeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterDeviceRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterDeviceRequest) Descriptor() ([]byte, []int) {
-	return file_bluetooth_proto_rawDescGZIP(), []int{4}
+	return file_bluetooth_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UnregisterDeviceRequest) GetID() int32 {
@@ -268,7 +363,7 @@ type RegisterDeviceRequest struct {
 func (x *RegisterDeviceRequest) Reset() {
 	*x = RegisterDeviceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bluetooth_proto_msgTypes[5]
+		mi := &file_bluetooth_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -281,7 +376,7 @@ func (x *RegisterDeviceRequest) String() string {
 func (*RegisterDeviceRequest) ProtoMessage() {}
 
 func (x *RegisterDeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bluetooth_proto_msgTypes[5]
+	mi := &file_bluetooth_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -294,7 +389,7 @@ func (x *RegisterDeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterDeviceRequest.ProtoReflect.Descriptor instead.
 func (*RegisterDeviceRequest) Descriptor() ([]byte, []int) {
-	return file_bluetooth_proto_rawDescGZIP(), []int{5}
+	return file_bluetooth_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RegisterDeviceRequest) GetName() string {
@@ -311,6 +406,85 @@ func (x *RegisterDeviceRequest) GetMacAddress() string {
 	return ""
 }
 
+type GetDevicesFullInfoResponse_Device struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ID         int32                `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	MacAddress string               `protobuf:"bytes,2,opt,name=MacAddress,proto3" json:"MacAddress,omitempty"`
+	Name       string               `protobuf:"bytes,3,opt,name=Name,proto3" json:"Name,omitempty"`
+	CreatedAt  *timestamp.Timestamp `protobuf:"bytes,4,opt,name=CreatedAt,proto3" json:"CreatedAt,omitempty"`
+	UpdatedAt  *timestamp.Timestamp `protobuf:"bytes,5,opt,name=UpdatedAt,proto3" json:"UpdatedAt,omitempty"`
+}
+
+func (x *GetDevicesFullInfoResponse_Device) Reset() {
+	*x = GetDevicesFullInfoResponse_Device{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_bluetooth_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetDevicesFullInfoResponse_Device) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDevicesFullInfoResponse_Device) ProtoMessage() {}
+
+func (x *GetDevicesFullInfoResponse_Device) ProtoReflect() protoreflect.Message {
+	mi := &file_bluetooth_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDevicesFullInfoResponse_Device.ProtoReflect.Descriptor instead.
+func (*GetDevicesFullInfoResponse_Device) Descriptor() ([]byte, []int) {
+	return file_bluetooth_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *GetDevicesFullInfoResponse_Device) GetID() int32 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
+func (x *GetDevicesFullInfoResponse_Device) GetMacAddress() string {
+	if x != nil {
+		return x.MacAddress
+	}
+	return ""
+}
+
+func (x *GetDevicesFullInfoResponse_Device) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetDevicesFullInfoResponse_Device) GetCreatedAt() *timestamp.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *GetDevicesFullInfoResponse_Device) GetUpdatedAt() *timestamp.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
 type DevicesListResponse_Device struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -324,7 +498,7 @@ type DevicesListResponse_Device struct {
 func (x *DevicesListResponse_Device) Reset() {
 	*x = DevicesListResponse_Device{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bluetooth_proto_msgTypes[6]
+		mi := &file_bluetooth_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -337,7 +511,7 @@ func (x *DevicesListResponse_Device) String() string {
 func (*DevicesListResponse_Device) ProtoMessage() {}
 
 func (x *DevicesListResponse_Device) ProtoReflect() protoreflect.Message {
-	mi := &file_bluetooth_proto_msgTypes[6]
+	mi := &file_bluetooth_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -350,7 +524,7 @@ func (x *DevicesListResponse_Device) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DevicesListResponse_Device.ProtoReflect.Descriptor instead.
 func (*DevicesListResponse_Device) Descriptor() ([]byte, []int) {
-	return file_bluetooth_proto_rawDescGZIP(), []int{1, 0}
+	return file_bluetooth_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *DevicesListResponse_Device) GetID() int32 {
@@ -379,7 +553,30 @@ var File_bluetooth_proto protoreflect.FileDescriptor
 var file_bluetooth_proto_rawDesc = []byte{
 	0x0a, 0x0f, 0x62, 0x6c, 0x75, 0x65, 0x74, 0x6f, 0x6f, 0x74, 0x68, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x1a, 0x1b, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
-	0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x36,
+	0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f,
+	0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
+	0x2d, 0x0a, 0x19, 0x47, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x46, 0x75, 0x6c,
+	0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03,
+	0x49, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x05, 0x52, 0x03, 0x49, 0x64, 0x73, 0x22, 0x9d,
+	0x02, 0x0a, 0x1a, 0x47, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x46, 0x75, 0x6c,
+	0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3c, 0x0a,
+	0x07, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22,
+	0x2e, 0x47, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x46, 0x75, 0x6c, 0x6c, 0x49,
+	0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x44, 0x65, 0x76, 0x69,
+	0x63, 0x65, 0x52, 0x07, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x1a, 0xc0, 0x01, 0x0a, 0x06,
+	0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x02, 0x49, 0x44, 0x12, 0x1e, 0x0a, 0x0a, 0x4d, 0x61, 0x63, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x4d, 0x61, 0x63, 0x41,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x38, 0x0a, 0x09, 0x43, 0x72,
+	0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
+	0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x43, 0x72, 0x65, 0x61, 0x74,
+	0x65, 0x64, 0x41, 0x74, 0x12, 0x38, 0x0a, 0x09, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41,
+	0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x52, 0x09, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x22, 0x36,
 	0x0a, 0x12, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x54, 0x79,
 	0x70, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0b, 0x44, 0x65, 0x76, 0x69, 0x63,
@@ -407,7 +604,7 @@ var file_bluetooth_proto_rawDesc = []byte{
 	0x12, 0x12, 0x0a, 0x04, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
 	0x4e, 0x61, 0x6d, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x4d, 0x61, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65,
 	0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x4d, 0x61, 0x63, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x32, 0xb1, 0x02, 0x0a, 0x09, 0x42, 0x6c, 0x75, 0x65, 0x74, 0x6f, 0x6f,
+	0x72, 0x65, 0x73, 0x73, 0x32, 0x80, 0x03, 0x0a, 0x09, 0x42, 0x6c, 0x75, 0x65, 0x74, 0x6f, 0x6f,
 	0x74, 0x68, 0x12, 0x29, 0x0a, 0x06, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x12, 0x0e, 0x2e, 0x53,
 	0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0f, 0x2e, 0x53,
 	0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x37, 0x0a,
@@ -426,8 +623,13 @@ var file_bluetooth_proto_rawDesc = []byte{
 	0x0a, 0x0b, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x13, 0x2e,
 	0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x1a, 0x14, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x4c, 0x69, 0x73, 0x74,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x0c, 0x5a, 0x0a, 0x2f, 0x62, 0x6c, 0x75,
-	0x65, 0x74, 0x6f, 0x6f, 0x74, 0x68, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x44,
+	0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x46, 0x75, 0x6c, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x1a,
+	0x2e, 0x47, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x46, 0x75, 0x6c, 0x6c, 0x49,
+	0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x47, 0x65, 0x74,
+	0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x46, 0x75, 0x6c, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x0c, 0x5a, 0x0a, 0x2f, 0x62, 0x6c, 0x75, 0x65,
+	0x74, 0x6f, 0x6f, 0x74, 0x68, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -442,34 +644,43 @@ func file_bluetooth_proto_rawDescGZIP() []byte {
 	return file_bluetooth_proto_rawDescData
 }
 
-var file_bluetooth_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_bluetooth_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_bluetooth_proto_goTypes = []interface{}{
-	(*DevicesListRequest)(nil),         // 0: DevicesListRequest
-	(*DevicesListResponse)(nil),        // 1: DevicesListResponse
-	(*SearchRequest)(nil),              // 2: SearchRequest
-	(*SearchResponse)(nil),             // 3: SearchResponse
-	(*UnregisterDeviceRequest)(nil),    // 4: UnregisterDeviceRequest
-	(*RegisterDeviceRequest)(nil),      // 5: RegisterDeviceRequest
-	(*DevicesListResponse_Device)(nil), // 6: DevicesListResponse.Device
-	(*empty.Empty)(nil),                // 7: google.protobuf.Empty
+	(*GetDevicesFullInfoRequest)(nil),         // 0: GetDevicesFullInfoRequest
+	(*GetDevicesFullInfoResponse)(nil),        // 1: GetDevicesFullInfoResponse
+	(*DevicesListRequest)(nil),                // 2: DevicesListRequest
+	(*DevicesListResponse)(nil),               // 3: DevicesListResponse
+	(*SearchRequest)(nil),                     // 4: SearchRequest
+	(*SearchResponse)(nil),                    // 5: SearchResponse
+	(*UnregisterDeviceRequest)(nil),           // 6: UnregisterDeviceRequest
+	(*RegisterDeviceRequest)(nil),             // 7: RegisterDeviceRequest
+	(*GetDevicesFullInfoResponse_Device)(nil), // 8: GetDevicesFullInfoResponse.Device
+	(*DevicesListResponse_Device)(nil),        // 9: DevicesListResponse.Device
+	(*timestamp.Timestamp)(nil),               // 10: google.protobuf.Timestamp
+	(*empty.Empty)(nil),                       // 11: google.protobuf.Empty
 }
 var file_bluetooth_proto_depIdxs = []int32{
-	6, // 0: DevicesListResponse.Devices:type_name -> DevicesListResponse.Device
-	2, // 1: Bluetooth.Search:input_type -> SearchRequest
-	7, // 2: Bluetooth.Blink:input_type -> google.protobuf.Empty
-	5, // 3: Bluetooth.RegisterDevice:input_type -> RegisterDeviceRequest
-	4, // 4: Bluetooth.UnregisterDevice:input_type -> UnregisterDeviceRequest
-	0, // 5: Bluetooth.DevicesList:input_type -> DevicesListRequest
-	3, // 6: Bluetooth.Search:output_type -> SearchResponse
-	7, // 7: Bluetooth.Blink:output_type -> google.protobuf.Empty
-	7, // 8: Bluetooth.RegisterDevice:output_type -> google.protobuf.Empty
-	7, // 9: Bluetooth.UnregisterDevice:output_type -> google.protobuf.Empty
-	1, // 10: Bluetooth.DevicesList:output_type -> DevicesListResponse
-	6, // [6:11] is the sub-list for method output_type
-	1, // [1:6] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	8,  // 0: GetDevicesFullInfoResponse.Devices:type_name -> GetDevicesFullInfoResponse.Device
+	9,  // 1: DevicesListResponse.Devices:type_name -> DevicesListResponse.Device
+	10, // 2: GetDevicesFullInfoResponse.Device.CreatedAt:type_name -> google.protobuf.Timestamp
+	10, // 3: GetDevicesFullInfoResponse.Device.UpdatedAt:type_name -> google.protobuf.Timestamp
+	4,  // 4: Bluetooth.Search:input_type -> SearchRequest
+	11, // 5: Bluetooth.Blink:input_type -> google.protobuf.Empty
+	7,  // 6: Bluetooth.RegisterDevice:input_type -> RegisterDeviceRequest
+	6,  // 7: Bluetooth.UnregisterDevice:input_type -> UnregisterDeviceRequest
+	2,  // 8: Bluetooth.DevicesList:input_type -> DevicesListRequest
+	0,  // 9: Bluetooth.GetDevicesFullInfo:input_type -> GetDevicesFullInfoRequest
+	5,  // 10: Bluetooth.Search:output_type -> SearchResponse
+	11, // 11: Bluetooth.Blink:output_type -> google.protobuf.Empty
+	11, // 12: Bluetooth.RegisterDevice:output_type -> google.protobuf.Empty
+	11, // 13: Bluetooth.UnregisterDevice:output_type -> google.protobuf.Empty
+	3,  // 14: Bluetooth.DevicesList:output_type -> DevicesListResponse
+	1,  // 15: Bluetooth.GetDevicesFullInfo:output_type -> GetDevicesFullInfoResponse
+	10, // [10:16] is the sub-list for method output_type
+	4,  // [4:10] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_bluetooth_proto_init() }
@@ -479,7 +690,7 @@ func file_bluetooth_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_bluetooth_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DevicesListRequest); i {
+			switch v := v.(*GetDevicesFullInfoRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -491,7 +702,7 @@ func file_bluetooth_proto_init() {
 			}
 		}
 		file_bluetooth_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DevicesListResponse); i {
+			switch v := v.(*GetDevicesFullInfoResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -503,7 +714,7 @@ func file_bluetooth_proto_init() {
 			}
 		}
 		file_bluetooth_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SearchRequest); i {
+			switch v := v.(*DevicesListRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -515,7 +726,7 @@ func file_bluetooth_proto_init() {
 			}
 		}
 		file_bluetooth_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SearchResponse); i {
+			switch v := v.(*DevicesListResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -527,7 +738,7 @@ func file_bluetooth_proto_init() {
 			}
 		}
 		file_bluetooth_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UnregisterDeviceRequest); i {
+			switch v := v.(*SearchRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -539,7 +750,7 @@ func file_bluetooth_proto_init() {
 			}
 		}
 		file_bluetooth_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RegisterDeviceRequest); i {
+			switch v := v.(*SearchResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -551,6 +762,42 @@ func file_bluetooth_proto_init() {
 			}
 		}
 		file_bluetooth_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UnregisterDeviceRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_bluetooth_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RegisterDeviceRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_bluetooth_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetDevicesFullInfoResponse_Device); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_bluetooth_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DevicesListResponse_Device); i {
 			case 0:
 				return &v.state
@@ -569,7 +816,7 @@ func file_bluetooth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_bluetooth_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

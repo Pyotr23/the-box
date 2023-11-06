@@ -21,7 +21,7 @@ type fsmProcessor struct {
 
 func NewFsmProcessor(
 	bs bluetoothService,
-	sts settingsWriter,
+	sts settingsService,
 	textChatIdCh chan<- model.TextChatID,
 	keyboardCh chan<- model.Keyboard,
 ) *fsmProcessor {

@@ -54,6 +54,50 @@ func (Repository) DeleteDevice(ctx context.Context, id int) error {
 	return exec(ctx, q, id)
 }
 
+func (Repository) GetByIDs(ctx context.Context, ids []int) ([]model.DbDevice, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	placeholderString, genericMacAddresses := getQueryInfo[int](ids)
+	q := fmt.Sprintf(`
+			select *
+			from device
+			where id in (%s)`,
+		placeholderString,
+	)
+
+	rows, err := query(ctx, q, genericMacAddresses...)
+	if err != nil {
+		return nil, fmt.Errorf("query: %w", err)
+	}
+
+	defer func() {
+		if dErr := rows.Close(); dErr != nil {
+			log.Printf("rows close: %s", dErr)
+		}
+	}()
+
+	var res = make([]model.DbDevice, 0, len(ids))
+	for rows.Next() {
+		var device = model.DbDevice{}
+		rErr := rows.Scan(
+			&device.ID,
+			&device.CreatedAt,
+			&device.UpdatedAt,
+			&device.MacAddress,
+			&device.Name,
+		)
+		if rErr != nil {
+			log.Fatal("rows scan error")
+		}
+
+		res = append(res, device)
+	}
+
+	return res, nil
+}
+
 func (Repository) GetByMacAddresses(ctx context.Context, macAddresses []string) ([]model.DbDevice, error) {
 	if len(macAddresses) == 0 {
 		return nil, nil
