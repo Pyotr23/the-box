@@ -161,3 +161,18 @@ func (c *Client) GetDevicesFullInfo(ctx context.Context, ids []int) ([]model.Dev
 
 	return res, nil
 }
+
+func (c *Client) GetTemperature(ctx context.Context, id int) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultDuration)
+	defer cancel()
+
+	req := &b.GetTemperatureRequest{
+		Id: int32(id),
+	}
+	resp, err := c.api.GetTemperature(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("api call: %w", err)
+	}
+
+	return resp.GetValue(), nil
+}

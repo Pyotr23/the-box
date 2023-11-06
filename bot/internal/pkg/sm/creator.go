@@ -24,6 +24,8 @@ const (
 	setDeviceCommand    botCommand = "device_set"
 	activeDeviceCommand botCommand = "active_device"
 
+	temperatureCommand botCommand = "temperature"
+
 	leavePrefix = "leave_"
 	enterPrefix = "enter_"
 
@@ -45,6 +47,7 @@ type bluetoothService interface {
 	RegisteredDevicesMap(ctx context.Context) (map[string]model.Device, error)
 	GetDeviceAliases(ctx context.Context) ([]string, error)
 	GetDeviceFullInfo(ctx context.Context, id int) (model.DeviceInfo, error)
+	GetTemperature(ctx context.Context, id int) (string, error)
 }
 
 type settingsService interface {
@@ -80,6 +83,7 @@ func newFsmCreator(
 		unregisterCommand:   c.newUnregisterDeviceFSM,
 		setDeviceCommand:    c.newSetDeviceFSM,
 		activeDeviceCommand: c.newActiveDeviceFSM,
+		temperatureCommand:  c.newTemperatureFSM,
 	}
 	return c
 }
@@ -94,6 +98,50 @@ func (c *fsmCreator) create(chatID int64, command string) (*fsm.FSM, error) {
 	}
 
 	return nil, fmt.Errorf("unknown command '%s'", command)
+}
+
+func (c *fsmCreator) newTemperatureFSM(chatID int64) *fsm.FSM {
+	const (
+		gotTemperatureEvent = "temperature_got"
+	)
+	var sm = fsm.NewFSM(startState,
+		fsm.Events{
+			{
+				Name: gotTemperatureEvent,
+				Src:  []string{startState},
+				Dst:  finishState,
+			},
+		},
+		fsm.Callbacks{
+			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				id, err := c.settingsService.ReadDeviceID()
+				if err != nil {
+					err = fmt.Errorf("read device id: %w", err)
+					return
+				}
+
+				t, err := c.service.GetTemperature(ctx, id)
+				if err != nil {
+					err = fmt.Errorf("get temperature: %w", err)
+					return
+				}
+
+				c.sendText(e.FSM, t)
+
+				return
+			},
+		},
+	)
+
+	sm.SetMetadata(eventKey, gotTemperatureEvent)
+	sm.SetMetadata(chatIdKey, chatID)
+
+	return sm
 }
 
 func (c *fsmCreator) newActiveDeviceFSM(chatID int64) *fsm.FSM {

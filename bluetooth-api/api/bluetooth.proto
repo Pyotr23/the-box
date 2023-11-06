@@ -12,6 +12,15 @@ service Bluetooth {
     rpc UnregisterDevice(UnregisterDeviceRequest) returns (google.protobuf.Empty);
     rpc DevicesList(DevicesListRequest) returns (DevicesListResponse);
     rpc GetDevicesFullInfo(GetDevicesFullInfoRequest) returns (GetDevicesFullInfoResponse);
+    rpc GetTemperature(GetTemperatureRequest) returns (GetTemperatureResponse);
+}
+
+message GetTemperatureRequest {
+    int32 Id = 1;
+}
+
+message GetTemperatureResponse {
+    string Value = 1;
 }
 
 message GetDevicesFullInfoRequest {

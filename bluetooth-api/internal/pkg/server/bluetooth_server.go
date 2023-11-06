@@ -18,10 +18,12 @@ type (
 		UnregisterDevice(ctx context.Context, id int) error
 		GetDeviceByAddressMap(ctx context.Context, addresses []string) (map[string]model.Device, error)
 		GetDeviceByIDs(ctx context.Context, ids []int) ([]model.DeviceInfo, error)
+		GetMacAddressByID(ctx context.Context, id int) (string, error)
 	}
 
 	socketService interface {
 		Blink(ctx context.Context, macAddress string) error
+		GetTemperature(_ context.Context, macAddress string) (string, error)
 	}
 )
 

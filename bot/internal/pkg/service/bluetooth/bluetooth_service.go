@@ -23,6 +23,7 @@ type client interface {
 	UnregisterDevice(ctx context.Context, id int) error
 	DevicesList(ctx context.Context, deviceNames []string) ([]model.Device, error)
 	GetDevicesFullInfo(ctx context.Context, ids []int) ([]model.DeviceInfo, error)
+	GetTemperature(ctx context.Context, id int) (string, error)
 }
 
 type Service struct {
@@ -33,6 +34,10 @@ func NewService(c client) *Service {
 	return &Service{
 		c: c,
 	}
+}
+
+func (s *Service) GetTemperature(ctx context.Context, id int) (string, error) {
+	return s.c.GetTemperature(ctx, id)
 }
 
 func (s *Service) GetDeviceFullInfo(ctx context.Context, id int) (model.DeviceInfo, error) {

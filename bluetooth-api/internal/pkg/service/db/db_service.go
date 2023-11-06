@@ -84,3 +84,16 @@ func (s *Service) GetDeviceByIDs(
 
 	return res, nil
 }
+
+func (s *Service) GetMacAddressByID(ctx context.Context, id int) (string, error) {
+	dbDevices, err := s.repo.GetByIDs(ctx, []int{id})
+	if err != nil {
+		return "", err
+	}
+
+	if len(dbDevices) == 0 {
+		return "", nil
+	}
+
+	return dbDevices[0].MacAddress, nil
+}

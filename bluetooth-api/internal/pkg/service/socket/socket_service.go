@@ -35,6 +35,20 @@ func (s *Service) Blink(_ context.Context, macAddress string) error {
 	return nil
 }
 
+func (s *Service) GetTemperature(_ context.Context, macAddress string) (string, error) {
+	skt, err := s.getConnectedSocket(macAddress)
+	if err != nil {
+		return "", fmt.Errorf("get connected socket: %w", err)
+	}
+
+	t, err := skt.Query(enum.TemperatureCode)
+	if err != nil {
+		return "", fmt.Errorf("query: %w", err)
+	}
+
+	return t, nil
+}
+
 func (s *Service) Close(ctx context.Context) {
 	log.Print("close sockets...")
 	defer log.Print("sockets closed")
