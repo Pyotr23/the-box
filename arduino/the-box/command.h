@@ -2,16 +2,18 @@ typedef enum
 {
   UNKNOWN, 
   TEMPERATURE, 
-  RELAY_ON, 
-  RELAY_OFF, 
+  PIN_ON, 
+  PIN_OFF, 
+  CHECK_PIN,
   BLINK
 } Command;
 
 Command commands[] = {
   UNKNOWN, 
   TEMPERATURE, 
-  RELAY_ON, 
-  RELAY_OFF,
+  PIN_ON, 
+  PIN_OFF,
+  CHECK_PIN,
   BLINK,
 };
 

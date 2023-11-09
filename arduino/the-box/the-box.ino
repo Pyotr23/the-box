@@ -1,16 +1,20 @@
-#include <EEPROM.h>
 #include <DHT.h>
 
 #include "command.h"
 
 #define DHTPIN 2
 
+const int LED = 13;
+const int MAX_PIN = LED;
+const int BLUETOOTH_RX = 0;
+const int BLUETOOTH_TX = 1;
+const int DHT_PIN = 2;
 
-DHT dht(DHTPIN, DHT11);
+int busyPins[] = {BLUETOOTH_RX, BLUETOOTH_TX, DHT_PIN};
+
+DHT dht(DHT_PIN, DHT11);
 
 const bool IS_DEBUG = false;  
-
-const int LED = 13;
 
 const byte SUCCESS = 1;
 const byte ERROR = 0;
@@ -19,6 +23,10 @@ const int BLINK_COUNT = 3;
 const int ONE_BLINK_TIMEOUT_MS = 500;
 
 const int TICK_RATE_MS = 500;
+
+const int WAITING_TIMEOUT_MS = 5000;
+const int WAITING_SLEEP_TIMEOUT_MS = 100;
+int waitingCount = WAITING_TIMEOUT_MS / WAITING_SLEEP_TIMEOUT_MS;
 
 void setup() {
   Serial.begin(9600);
@@ -43,12 +51,33 @@ void loop() {
 
   // switch/case doesn't working... i don't know why...
   Command command = IntToCommand(intCommand);
-  if (command == RELAY_OFF) {
-    digitalWrite(LED, LOW);
+  if (command == PIN_OFF) {
+    int pin = waitNumber();  
+    if (pin == -1) {
+      writeErrorMsg("pin not waited");
+      return;
+    }  
+    digitalWrite(pin, LOW);
     sendSuccess();
-  } else if (command == RELAY_ON) {
-    digitalWrite(LED, HIGH);
+  } else if (command == PIN_ON) {
+    int pin = waitNumber();  
+    if (pin == -1) {
+      writeErrorMsg("pin not waited");
+      return;
+    }  
+    digitalWrite(pin, HIGH);
     sendSuccess();
+  } else if (command == CHECK_PIN) {
+    int pin = waitNumber();  
+    if (pin == -1) {
+      writeErrorMsg("pin not waited");
+      return;
+    }  
+    if (isAvailablePin(pin)) {
+      sendSuccess();     
+    } else {
+      Serial.write(ERROR);
+    }
   } else if (command == TEMPERATURE) {    
     float t = dht.readTemperature();
     if (isnan(t)) {
@@ -69,6 +98,31 @@ void loop() {
   }
 
   delay(TICK_RATE_MS);
+}
+
+bool isAvailablePin(int pin) {
+  for (int i = 0; i < sizeof(busyPins); i++) {
+    if (busyPins[i] == pin) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int waitNumber() {  
+  for (int i = 0; i < waitingCount; i++) {
+      delay(WAITING_SLEEP_TIMEOUT_MS);
+      if (Serial.available() == 0) {
+        continue;
+      }
+      
+      byte n = Serial.read();
+      if (IS_DEBUG) {        
+        n -= 48;
+      }
+      return n;
+    }
+  return -1;
 }
 
 void sendSuccess() {
