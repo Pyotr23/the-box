@@ -70,7 +70,8 @@ void loop() {
       sendSuccess();
       break;
     case CHECK_PIN:
-      usedPin = waitNumber();    
+      usedPin = waitNumber();   
+//      writeErrorMsg(usedPin); 
       if (usedPin == -1) {
         writeErrorMsg("pin not waited");
         return;
@@ -126,11 +127,11 @@ int waitNumber() {
         continue;
       }
       
-      byte n = Serial.read();
-      if (IS_DEBUG) {        
-        n -= 48;
-      }
-      return n;
+      int n = Serial.read();
+//      if (IS_DEBUG) {        
+//        n -= 48;
+//      }
+      return n - 48;
     }
   return -1;
 }
@@ -174,7 +175,18 @@ void writeErrorMsg(char msg[]) {
   }
   
   Serial.write(ERROR);
-  Serial.write(msg);
+  Serial.print(msg);
+}
+
+void writeErrorMsg(int num) {
+  if (IS_DEBUG) {
+    Serial.println(ERROR);
+    Serial.println(num);
+    return;
+  }
+  
+  Serial.write(ERROR);
+  Serial.print(num);
 }
 
 char* toChars(float num) {
