@@ -14,7 +14,7 @@ int busyPins[] = {BLUETOOTH_RX, BLUETOOTH_TX, DHT_PIN};
 
 DHT dht(DHT_PIN, DHT11);
 
-const bool IS_DEBUG = true;  
+const bool IS_DEBUG = false;  
 
 const byte SUCCESS = 1;
 const byte ERROR = 0;
@@ -28,6 +28,7 @@ const int WAITING_TIMEOUT_MS = 5000;
 const int WAITING_SLEEP_TIMEOUT_MS = 100;
 int waitingCount = WAITING_TIMEOUT_MS / WAITING_SLEEP_TIMEOUT_MS;
 
+int usedPin;
 void setup() {
   Serial.begin(9600);
   
@@ -49,54 +50,60 @@ void loop() {
     Serial.println(intCommand);
   }
 
-  // switch/case doesn't working... i don't know why...
-  Command command = IntToCommand(intCommand);
-  if (command == PIN_OFF) {
-    int pin = waitNumber();  
-    if (pin == -1) {
-      writeErrorMsg("pin not waited");
-      return;
-    }  
-    digitalWrite(pin, LOW);
-    sendSuccess();
-  } else if (command == PIN_ON) {
-    int pin = waitNumber();  
-    if (pin == -1) {
-      writeErrorMsg("pin not waited");
-      return;
-    }  
-    digitalWrite(pin, HIGH);
-    sendSuccess();
-  } else if (command == CHECK_PIN) {
-    int pin = waitNumber();    
-    if (pin == -1) {
-      writeErrorMsg("pin not waited");
-      return;
-    }  
-    if (isAvailablePin(pin)) {
-      sendSuccess();     
-    } else {
-      writeErrorMsg("pin is busy");
-    }
-  } else if (command == TEMPERATURE) {    
-    float t = dht.readTemperature();
-    if (isnan(t)) {
-      writeErrorMsg("read temperature error");
-    } else {  
-      char buffer[5]; 
-      dtostrf(t, 4, 1, buffer);    
-      writeSuccessMsg(buffer);
-    } 
-  } else if (command == BLINK) {
-    for (int i = 0; i < BLINK_COUNT; i++) {
-      digitalWrite(LED, HIGH);
-      delay(ONE_BLINK_TIMEOUT_MS);
-      digitalWrite(LED, LOW);
-      delay(ONE_BLINK_TIMEOUT_MS);
-    }
-    sendSuccess();
+  switch (IntToCommand(intCommand)) {
+    case PIN_OFF:
+      usedPin = waitNumber();  
+      if (usedPin == -1) {
+        writeErrorMsg("pin not waited");
+        return;
+      }  
+      digitalWrite(usedPin, LOW);
+      sendSuccess();
+      break;
+    case PIN_ON:
+      usedPin = waitNumber();  
+      if (usedPin == -1) {
+        writeErrorMsg("pin not waited");
+        return;
+      }  
+      digitalWrite(usedPin, HIGH);
+      sendSuccess();
+      break;
+    case CHECK_PIN:
+      usedPin = waitNumber();    
+      if (usedPin == -1) {
+        writeErrorMsg("pin not waited");
+        return;
+      }  
+      if (isAvailablePin(usedPin)) {
+        sendSuccess();     
+      } else {
+        writeErrorMsg("pin is busy");
+      }
+      break;
+    case TEMPERATURE:
+      float t = dht.readTemperature();
+      if (isnan(t)) {
+        writeErrorMsg("read temperature error");
+      } else {  
+        char buffer[5]; 
+        dtostrf(t, 4, 1, buffer);    
+        writeSuccessMsg(buffer);
+      } 
+      break;
+    case BLINK:
+      for (int i = 0; i < BLINK_COUNT; i++) {
+        digitalWrite(LED, HIGH);
+        delay(ONE_BLINK_TIMEOUT_MS);
+        digitalWrite(LED, LOW);
+        delay(ONE_BLINK_TIMEOUT_MS);
+      }
+      sendSuccess();
+      break;
+    default:
+      writeErrorMsg("unknown command");
   }
-
+  
   delay(TICK_RATE_MS);
 }
 
