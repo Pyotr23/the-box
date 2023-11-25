@@ -2,15 +2,20 @@ package socket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/enum"
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/socket"
 )
 
-var defaultTimeout = time.Second * 5
+var (
+	defaultTimeout = time.Second * 5
+	pinIsBusyError = errors.New("pin is busy")
+)
 
 type Service struct {
 	socketByAddress map[string]socket.Socket
@@ -20,6 +25,23 @@ func NewSocketService() *Service {
 	return &Service{
 		socketByAddress: make(map[string]socket.Socket),
 	}
+}
+
+func (s *Service) CheckPin(_ context.Context, macAddress string, pin int) (bool, error) {
+	skt, err := s.getConnectedSocket(macAddress)
+	if err != nil {
+		return false, fmt.Errorf("get connected socket: %w", err)
+	}
+	log.Print("pin=", pin)
+	err = skt.SendText(enum.CheckPinCode, []byte(strconv.Itoa(pin)))
+	if errors.Is(err, pinIsBusyError) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("command: %w", err)
+	}
+
+	return true, nil
 }
 
 func (s *Service) Blink(_ context.Context, macAddress string) error {

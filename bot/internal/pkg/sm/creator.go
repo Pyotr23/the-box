@@ -26,6 +26,8 @@ const (
 
 	temperatureCommand botCommand = "temperature"
 
+	checkPinCommand botCommand = "check_pin"
+
 	leavePrefix = "leave_"
 	enterPrefix = "enter_"
 
@@ -48,6 +50,7 @@ type bluetoothService interface {
 	GetDeviceAliases(ctx context.Context) ([]string, error)
 	GetDeviceFullInfo(ctx context.Context, id int) (model.DeviceInfo, error)
 	GetTemperature(ctx context.Context, id int) (string, error)
+	CheckPin(ctx context.Context, deviceID, pin int) (bool, error)
 }
 
 type settingsService interface {
@@ -84,6 +87,7 @@ func newFsmCreator(
 		setDeviceCommand:    c.newSetDeviceFSM,
 		activeDeviceCommand: c.newActiveDeviceFSM,
 		temperatureCommand:  c.newTemperatureFSM,
+		checkPinCommand:     c.newCheckPinFSM,
 	}
 	return c
 }
@@ -98,6 +102,107 @@ func (c *fsmCreator) create(chatID int64, command string) (*fsm.FSM, error) {
 	}
 
 	return nil, fmt.Errorf("unknown command '%s'", command)
+}
+
+func (c *fsmCreator) newCheckPinFSM(chatID int64) *fsm.FSM {
+	const (
+		pinWaitingState    = "pin_waiting"
+		checkedDeviceEvent = "device_checked"
+		checkedPinEvent    = "pin_checked"
+		deviceKey          = "device_id"
+	)
+
+	var sm = fsm.NewFSM(startState,
+		fsm.Events{
+			{
+				Name: checkedDeviceEvent,
+				Src:  []string{startState},
+				Dst:  pinWaitingState,
+			},
+			{
+				Name: checkedPinEvent,
+				Src:  []string{pinWaitingState},
+				Dst:  finishState,
+			},
+		},
+		fsm.Callbacks{
+			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				id, err := c.settingsService.ReadDeviceID()
+				if err != nil {
+					err = fmt.Errorf("read device id: %w", err)
+					return
+				}
+				if id == 0 {
+					c.textChatIdCh <- model.TextChatID{
+						Text:   fmt.Sprintf("device unregistered, use '/%s' command", registerCommand),
+						ChatID: chatID,
+					}
+					return
+				}
+
+				e.FSM.SetMetadata(deviceKey, id)
+
+				c.sendText(e.FSM, "choose device pin:")
+
+				e.FSM.SetMetadata(eventKey, checkedPinEvent)
+
+				return
+			},
+			withLeavePrefix(pinWaitingState): func(ctx context.Context, e *fsm.Event) {
+				var err error
+				defer func() {
+					e.Err = err
+				}()
+
+				if len(e.Args) == 0 {
+					err = errors.New("no args")
+					return
+				}
+
+				userChoice, ok := e.Args[0].(string)
+				if !ok {
+					err = errors.New("first arg not string")
+					return
+				}
+
+				pin, err := strconv.Atoi(userChoice)
+				if err != nil {
+					err = errors.New("user choice not integer")
+					return
+				}
+
+				deviceID, err := getMetadataValue[int](e.FSM, deviceKey)
+				if err != nil {
+					err = fmt.Errorf("get metadata value: %w", err)
+					return
+				}
+
+				isAvailable, err := c.service.CheckPin(ctx, deviceID, pin)
+				if err != nil {
+					err = fmt.Errorf("check pin: %w", err)
+					return
+				}
+
+				if isAvailable {
+					c.sendText(e.FSM, fmt.Sprintf("pin %d available", pin))
+				} else {
+					c.sendText(e.FSM, fmt.Sprintf("pin %d is busy", pin))
+				}
+
+				return
+			},
+		},
+	)
+
+	sm.SetMetadata(eventKey, checkedDeviceEvent)
+	sm.SetMetadata(chatIdKey, chatID)
+
+	return sm
 }
 
 func (c *fsmCreator) newTemperatureFSM(chatID int64) *fsm.FSM {
@@ -465,7 +570,7 @@ func (c *fsmCreator) newRegisterDeviceFSM(chatID int64) *fsm.FSM {
 				}
 				address, ok := macValue.(string)
 				if !ok {
-					err = fmt.Errorf("metadat '%s' not string", macKey)
+					err = fmt.Errorf("metadata '%s' not string", macKey)
 					return
 				}
 
@@ -726,4 +831,19 @@ func withLeavePrefix(state string) string {
 
 func withEnterPrefix(state string) string {
 	return enterPrefix + state
+}
+
+func getMetadataValue[T any](sm *fsm.FSM, key string) (T, error) {
+	var res T
+	genericValue, ok := sm.Metadata(key)
+	if !ok {
+		return res, fmt.Errorf("metadata '%s' not found", key)
+	}
+
+	res, ok = genericValue.(T)
+	if !ok {
+		return res, fmt.Errorf("metadata '%s' not %T", key, res)
+	}
+
+	return res, nil
 }

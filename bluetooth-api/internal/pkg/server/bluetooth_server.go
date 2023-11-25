@@ -23,7 +23,8 @@ type (
 
 	socketService interface {
 		Blink(ctx context.Context, macAddress string) error
-		GetTemperature(_ context.Context, macAddress string) (string, error)
+		GetTemperature(ctx context.Context, macAddress string) (string, error)
+		CheckPin(ctx context.Context, macAddress string, pin int) (bool, error)
 	}
 )
 

@@ -13,6 +13,16 @@ service Bluetooth {
     rpc DevicesList(DevicesListRequest) returns (DevicesListResponse);
     rpc GetDevicesFullInfo(GetDevicesFullInfoRequest) returns (GetDevicesFullInfoResponse);
     rpc GetTemperature(GetTemperatureRequest) returns (GetTemperatureResponse);
+    rpc CheckPin(CheckPinRequest) returns (CheckPinResponse);
+}
+
+message CheckPinRequest {
+    int32 DeviceId = 1;
+    int32 PinNumber = 2;
+}
+
+message CheckPinResponse {
+    bool IsAvailable = 1;
 }
 
 message GetTemperatureRequest {

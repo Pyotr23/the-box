@@ -3,6 +3,7 @@ package socket
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"syscall"
@@ -102,9 +103,10 @@ func (s Socket) readError() error {
 	if len(successBytes) == 0 {
 		return errors.New("no success bytes")
 	}
-
+	log.Print("read error")
 	if successBytes[0] == errorByte {
 		msg, err := s.read(defaultSize)
+		log.Printf("read: %s", msg)
 		if err != nil {
 			return fmt.Errorf("read error message: %w", err)
 		}

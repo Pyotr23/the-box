@@ -8,4 +8,5 @@ type DbDevice struct {
 	UpdatedAt  time.Time `db:"updated_at"`
 	MacAddress string    `db:"mac"`
 	Name       string    `db:"name"`
+	ActivePin  int       `db:"active_pin"`
 }

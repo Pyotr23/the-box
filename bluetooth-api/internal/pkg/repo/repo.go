@@ -61,7 +61,12 @@ func (Repository) GetByIDs(ctx context.Context, ids []int) ([]model.DbDevice, er
 
 	placeholderString, genericMacAddresses := getQueryInfo[int](ids)
 	q := fmt.Sprintf(`
-			select *
+			select id
+				, created_at
+				, updated_at
+				, mac
+				, name
+				, active_pin
 			from device
 			where id in (%s)`,
 		placeholderString,
@@ -87,9 +92,10 @@ func (Repository) GetByIDs(ctx context.Context, ids []int) ([]model.DbDevice, er
 			&device.UpdatedAt,
 			&device.MacAddress,
 			&device.Name,
+			&device.ActivePin,
 		)
 		if rErr != nil {
-			log.Fatal("rows scan error")
+			return nil, fmt.Errorf("rows scan error: %w", rErr)
 		}
 
 		res = append(res, device)
@@ -105,7 +111,12 @@ func (Repository) GetByMacAddresses(ctx context.Context, macAddresses []string) 
 
 	placeholderString, genericMacAddresses := getQueryInfo[string](macAddresses)
 	q := fmt.Sprintf(`
-			select *
+			select id
+				, created_at
+				, updated_at
+				, mac
+				, name
+				, active_pin
 			from device
 			where mac in (%s)`,
 		placeholderString,
@@ -131,9 +142,10 @@ func (Repository) GetByMacAddresses(ctx context.Context, macAddresses []string) 
 			&device.UpdatedAt,
 			&device.MacAddress,
 			&device.Name,
+			&device.ActivePin,
 		)
 		if rErr != nil {
-			log.Fatal("rows scan error")
+			return nil, fmt.Errorf("rows scan error: %w", rErr)
 		}
 
 		res = append(res, device)

@@ -176,3 +176,19 @@ func (c *Client) GetTemperature(ctx context.Context, id int) (string, error) {
 
 	return resp.GetValue(), nil
 }
+
+func (c *Client) CheckPin(ctx context.Context, deviceID, pin int) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultDuration)
+	defer cancel()
+
+	req := &b.CheckPinRequest{
+		DeviceId:  int32(deviceID),
+		PinNumber: int32(pin),
+	}
+	resp, err := c.api.CheckPin(ctx, req)
+	if err != nil {
+		return false, fmt.Errorf("api call: %w", err)
+	}
+
+	return resp.IsAvailable, nil
+}

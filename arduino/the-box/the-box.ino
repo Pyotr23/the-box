@@ -14,7 +14,7 @@ int busyPins[] = {BLUETOOTH_RX, BLUETOOTH_TX, DHT_PIN};
 
 DHT dht(DHT_PIN, DHT11);
 
-const bool IS_DEBUG = false;  
+const bool IS_DEBUG = true;  
 
 const byte SUCCESS = 1;
 const byte ERROR = 0;
@@ -68,7 +68,7 @@ void loop() {
     digitalWrite(pin, HIGH);
     sendSuccess();
   } else if (command == CHECK_PIN) {
-    int pin = waitNumber();  
+    int pin = waitNumber();    
     if (pin == -1) {
       writeErrorMsg("pin not waited");
       return;
@@ -76,7 +76,7 @@ void loop() {
     if (isAvailablePin(pin)) {
       sendSuccess();     
     } else {
-      Serial.write(ERROR);
+      writeErrorMsg("pin is busy");
     }
   } else if (command == TEMPERATURE) {    
     float t = dht.readTemperature();
@@ -100,13 +100,16 @@ void loop() {
   delay(TICK_RATE_MS);
 }
 
-bool isAvailablePin(int pin) {
-  for (int i = 0; i < sizeof(busyPins); i++) {
-    if (busyPins[i] == pin) {
-      return true;
+bool isAvailablePin(int pin) {  
+  if (sizeof(busyPins) == 0) {
+    return true;
+  } 
+  for (int i = 0; i < (sizeof(busyPins) / sizeof(busyPins[0])); i++) {   
+    if (busyPins[i] == pin) {      
+      return false;
     }
-  }
-  return false;
+  }  
+  return true;
 }
 
 int waitNumber() {  

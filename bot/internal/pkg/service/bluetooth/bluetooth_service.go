@@ -24,6 +24,7 @@ type client interface {
 	DevicesList(ctx context.Context, deviceNames []string) ([]model.Device, error)
 	GetDevicesFullInfo(ctx context.Context, ids []int) ([]model.DeviceInfo, error)
 	GetTemperature(ctx context.Context, id int) (string, error)
+	CheckPin(ctx context.Context, deviceID, pin int) (bool, error)
 }
 
 type Service struct {
@@ -34,6 +35,10 @@ func NewService(c client) *Service {
 	return &Service{
 		c: c,
 	}
+}
+
+func (s *Service) CheckPin(ctx context.Context, deviceID, pin int) (bool, error) {
+	return s.c.CheckPin(ctx, deviceID, pin)
 }
 
 func (s *Service) GetTemperature(ctx context.Context, id int) (string, error) {
