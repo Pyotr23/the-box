@@ -2,13 +2,13 @@ package socket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/enum"
+	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/model"
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/socket"
 )
 
@@ -33,12 +33,12 @@ func (s *Service) CheckPin(_ context.Context, macAddress string, pin int) (bool,
 		return false, fmt.Errorf("get connected socket: %w", err)
 	}
 
-	err = skt.SendText(enum.CheckPinCode, []byte(strconv.Itoa(pin)))
+	err = skt.SendInt(enum.CheckPinCode, pin)
 	if err != nil {
-		if strings.Contains(err.Error(), pinIsBusyErrorMsg) {
+		if errors.Is(err, model.PinIsBusyError) {
 			return false, nil
 		}
-		return false, fmt.Errorf("command: %w", err)
+		return false, fmt.Errorf("send int: %w", err)
 	}
 
 	return true, nil

@@ -6,6 +6,7 @@
 
 const int LED = 13;
 const int MAX_PIN = LED;
+const int MIN_PIN = 0;
 const int BLUETOOTH_RX = 0;
 const int BLUETOOTH_TX = 1;
 const int DHT_PIN = 2;
@@ -24,9 +25,7 @@ const int ONE_BLINK_TIMEOUT_MS = 500;
 
 const int TICK_RATE_MS = 500;
 
-const int WAITING_TIMEOUT_MS = 5000;
-const int WAITING_SLEEP_TIMEOUT_MS = 100;
-int waitingCount = WAITING_TIMEOUT_MS / WAITING_SLEEP_TIMEOUT_MS;
+const int WAITING_TIMEOUT_MS = 4500;
 
 int usedPin;
 void setup() {
@@ -70,8 +69,7 @@ void loop() {
       sendSuccess();
       break;
     case CHECK_PIN:
-      usedPin = waitNumber();   
-//      writeErrorMsg(usedPin); 
+      usedPin = waitNumber();
       if (usedPin == -1) {
         writeErrorMsg("pin not waited");
         return;
@@ -112,6 +110,9 @@ bool isAvailablePin(int pin) {
   if (sizeof(busyPins) == 0) {
     return true;
   } 
+  if (pin > MAX_PIN || pin < MIN_PIN) {
+    return false; 
+  }
   for (int i = 0; i < (sizeof(busyPins) / sizeof(busyPins[0])); i++) {   
     if (busyPins[i] == pin) {      
       return false;
@@ -121,19 +122,14 @@ bool isAvailablePin(int pin) {
 }
 
 int waitNumber() {  
-  for (int i = 0; i < waitingCount; i++) {
-      delay(WAITING_SLEEP_TIMEOUT_MS);
-      if (Serial.available() == 0) {
-        continue;
-      }
-      
-      int n = Serial.read();
-//      if (IS_DEBUG) {        
-//        n -= 48;
-//      }
-      return n - 48;
-    }
-  return -1;
+  Serial.setTimeout(WAITING_TIMEOUT_MS);
+  unsigned long startTime = millis();
+  int res = Serial.parseInt();
+  if (millis() - startTime > WAITING_TIMEOUT_MS) {
+    return -1;
+  }
+  Serial.read();
+  return res;
 }
 
 void sendSuccess() {

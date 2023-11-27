@@ -3,17 +3,21 @@ package socket
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/enum"
+	"github.com/Pyotr23/the-box/bluetooth-api/internal/pkg/model"
 	"golang.org/x/sys/unix"
 )
 
 const (
 	defaultSize = 64
 	errorByte   = byte(0)
+
+	finishedSendingIntChar = "\n"
 )
 
 type Socket struct {
@@ -72,6 +76,11 @@ func (s Socket) Command(b enum.Code) error {
 	return nil
 }
 
+func (s Socket) SendInt(b enum.Code, num int) error {
+	intMessage := strconv.Itoa(num) + finishedSendingIntChar
+	return s.SendText(b, []byte(intMessage))
+}
+
 func (s Socket) SendText(b enum.Code, bs []byte) error {
 	if err := s.write([]byte{byte(b)}); err != nil {
 		return fmt.Errorf("write code: %w", err)
@@ -108,7 +117,14 @@ func (s Socket) readError() error {
 		if err != nil {
 			return fmt.Errorf("read error message: %w", err)
 		}
-		return errors.New(string(msg))
+
+		errText := strings.TrimSpace(string(msg))
+		if strings.HasPrefix(errText, model.PinIsBusyErrText) {
+			log.Print("pin is busy")
+			return model.PinIsBusyError
+		}
+
+		return errors.New(errText)
 	}
 
 	return nil
