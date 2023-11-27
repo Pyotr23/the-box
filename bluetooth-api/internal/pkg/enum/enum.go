@@ -8,5 +8,4 @@ const (
 	PinOnCode
 	PinOffCode
 	CheckPinCode
-	Blink
 )

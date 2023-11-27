@@ -4,8 +4,7 @@ typedef enum
   TEMPERATURE, 
   PIN_ON, 
   PIN_OFF, 
-  CHECK_PIN,
-  BLINK
+  CHECK_PIN
 } Command;
 
 Command commands[] = {
@@ -13,8 +12,7 @@ Command commands[] = {
   TEMPERATURE, 
   PIN_ON, 
   PIN_OFF,
-  CHECK_PIN,
-  BLINK,
+  CHECK_PIN  
 };
 
 

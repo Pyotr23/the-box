@@ -13,8 +13,11 @@ import (
 )
 
 var (
-	defaultTimeout    = time.Second * 5
-	pinIsBusyErrorMsg = "pin is busy"
+	defaultTimeout = time.Second * 5
+
+	blinkPin     = 13
+	blinkTimeout = time.Millisecond * 500
+	blinksCount  = 3
 )
 
 type Service struct {
@@ -50,8 +53,18 @@ func (s *Service) Blink(_ context.Context, macAddress string) error {
 		return fmt.Errorf("get connected socket: %w", err)
 	}
 
-	if err = skt.Command(enum.Blink); err != nil {
-		return fmt.Errorf("command: %w", err)
+	for i := 0; i < blinksCount; i++ {
+		if err := skt.SendInt(enum.PinOnCode, blinkPin); err != nil {
+			return fmt.Errorf("send int for pin on: %w", err)
+		}
+
+		time.Sleep(blinkTimeout)
+
+		if err := skt.SendInt(enum.PinOffCode, blinkPin); err != nil {
+			return fmt.Errorf("send int for pin off: %w", err)
+		}
+
+		time.Sleep(blinkTimeout)
 	}
 
 	return nil

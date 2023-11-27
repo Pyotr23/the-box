@@ -20,9 +20,6 @@ const bool IS_DEBUG = false;
 const byte SUCCESS = 1;
 const byte ERROR = 0;
 
-const int BLINK_COUNT = 3;
-const int ONE_BLINK_TIMEOUT_MS = 500;
-
 const int TICK_RATE_MS = 500;
 
 const int WAITING_TIMEOUT_MS = 4500;
@@ -51,22 +48,10 @@ void loop() {
 
   switch (IntToCommand(intCommand)) {
     case PIN_OFF:
-      usedPin = waitNumber();  
-      if (usedPin == -1) {
-        writeErrorMsg("pin not waited");
-        return;
-      }  
-      digitalWrite(usedPin, LOW);
-      sendSuccess();
+      waitPinAndSetLevel(LOW);
       break;
     case PIN_ON:
-      usedPin = waitNumber();  
-      if (usedPin == -1) {
-        writeErrorMsg("pin not waited");
-        return;
-      }  
-      digitalWrite(usedPin, HIGH);
-      sendSuccess();
+      waitPinAndSetLevel(HIGH);
       break;
     case CHECK_PIN:
       usedPin = waitNumber();
@@ -89,21 +74,26 @@ void loop() {
         dtostrf(t, 4, 1, buffer);    
         writeSuccessMsg(buffer);
       } 
-      break;
-    case BLINK:
-      for (int i = 0; i < BLINK_COUNT; i++) {
-        digitalWrite(LED, HIGH);
-        delay(ONE_BLINK_TIMEOUT_MS);
-        digitalWrite(LED, LOW);
-        delay(ONE_BLINK_TIMEOUT_MS);
-      }
-      sendSuccess();
-      break;
+      break;    
     default:
       writeErrorMsg("unknown command");
   }
   
   delay(TICK_RATE_MS);
+}
+
+void waitPinAndSetLevel(int value) {
+  int p = waitNumber();
+  if (p == -1) {
+    writeErrorMsg("pin not waited");
+    return;
+  }  
+  if (isAvailablePin(p)) {
+    digitalWrite(p, value);  
+    sendSuccess();   
+  } else {
+    writeErrorMsg("pin is busy");
+  }
 }
 
 bool isAvailablePin(int pin) {  
