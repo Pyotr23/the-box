@@ -14,6 +14,13 @@ service Bluetooth {
     rpc GetDevicesFullInfo(GetDevicesFullInfoRequest) returns (GetDevicesFullInfoResponse);
     rpc GetTemperature(GetTemperatureRequest) returns (GetTemperatureResponse);
     rpc CheckPin(CheckPinRequest) returns (CheckPinResponse);
+    rpc PinLevel(PinLevelRequest) returns (google.protobuf.Empty);
+}
+
+message PinLevelRequest {
+    int32 DeviceId = 1;
+    int32 PinNumber = 2;
+    bool High = 3;
 }
 
 message CheckPinRequest {

@@ -25,6 +25,7 @@ type (
 		Blink(ctx context.Context, macAddress string) error
 		GetTemperature(ctx context.Context, macAddress string) (string, error)
 		CheckPin(ctx context.Context, macAddress string, pin int) (bool, error)
+		SetPinLevel(ctx context.Context, data model.SetPinData) error
 	}
 )
 

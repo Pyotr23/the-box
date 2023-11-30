@@ -47,6 +47,24 @@ func (s *Service) CheckPin(_ context.Context, macAddress string, pin int) (bool,
 	return true, nil
 }
 
+func (s *Service) SetPinLevel(_ context.Context, data model.SetPinData) error {
+	skt, err := s.getConnectedSocket(data.MacAddress)
+	if err != nil {
+		return fmt.Errorf("get connected socket: %w", err)
+	}
+
+	var code = enum.PinOffCode
+	if data.SetHighLevel {
+		code = enum.PinOffCode
+	}
+
+	if err := skt.SendInt(code, data.PinNumber); err != nil {
+		return fmt.Errorf("set pin level: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) Blink(_ context.Context, macAddress string) error {
 	skt, err := s.getConnectedSocket(macAddress)
 	if err != nil {

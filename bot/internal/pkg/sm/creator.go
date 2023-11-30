@@ -104,6 +104,107 @@ func (c *fsmCreator) create(chatID int64, command string) (*fsm.FSM, error) {
 	return nil, fmt.Errorf("unknown command '%s'", command)
 }
 
+// func (c *fsmCreator) newCheckPinFSM(chatID int64) *fsm.FSM {
+// 	const (
+// 		pinWaitingState    = "pin_waiting"
+// 		checkedDeviceEvent = "device_checked"
+// 		checkedPinEvent    = "pin_checked"
+// 		deviceKey          = "device_id"
+// 	)
+
+// 	var sm = fsm.NewFSM(startState,
+// 		fsm.Events{
+// 			{
+// 				Name: checkedDeviceEvent,
+// 				Src:  []string{startState},
+// 				Dst:  pinWaitingState,
+// 			},
+// 			{
+// 				Name: checkedPinEvent,
+// 				Src:  []string{pinWaitingState},
+// 				Dst:  finishState,
+// 			},
+// 		},
+// 		fsm.Callbacks{
+// 			withLeavePrefix(startState): func(ctx context.Context, e *fsm.Event) {
+// 				var err error
+// 				defer func() {
+// 					e.Err = err
+// 				}()
+
+// 				id, err := c.settingsService.ReadDeviceID()
+// 				if err != nil {
+// 					err = fmt.Errorf("read device id: %w", err)
+// 					return
+// 				}
+// 				if id == 0 {
+// 					c.textChatIdCh <- model.TextChatID{
+// 						Text:   fmt.Sprintf("device unregistered, use '/%s' command", registerCommand),
+// 						ChatID: chatID,
+// 					}
+// 					return
+// 				}
+
+// 				e.FSM.SetMetadata(deviceKey, id)
+
+// 				c.sendText(e.FSM, "choose device pin:")
+
+// 				e.FSM.SetMetadata(eventKey, checkedPinEvent)
+
+// 				return
+// 			},
+// 			withLeavePrefix(pinWaitingState): func(ctx context.Context, e *fsm.Event) {
+// 				var err error
+// 				defer func() {
+// 					e.Err = err
+// 				}()
+
+// 				if len(e.Args) == 0 {
+// 					err = errors.New("no args")
+// 					return
+// 				}
+
+// 				userChoice, ok := e.Args[0].(string)
+// 				if !ok {
+// 					err = errors.New("first arg not string")
+// 					return
+// 				}
+
+// 				pin, err := strconv.Atoi(userChoice)
+// 				if err != nil {
+// 					err = errors.New("user choice not integer")
+// 					return
+// 				}
+
+// 				deviceID, err := getMetadataValue[int](e.FSM, deviceKey)
+// 				if err != nil {
+// 					err = fmt.Errorf("get metadata value: %w", err)
+// 					return
+// 				}
+
+// 				isAvailable, err := c.service.CheckPin(ctx, deviceID, pin)
+// 				if err != nil {
+// 					err = fmt.Errorf("check pin: %w", err)
+// 					return
+// 				}
+
+// 				if isAvailable {
+// 					c.sendText(e.FSM, fmt.Sprintf("pin %d available", pin))
+// 				} else {
+// 					c.sendText(e.FSM, fmt.Sprintf("pin %d is busy", pin))
+// 				}
+
+// 				return
+// 			},
+// 		},
+// 	)
+
+// 	sm.SetMetadata(eventKey, checkedDeviceEvent)
+// 	sm.SetMetadata(chatIdKey, chatID)
+
+// 	return sm
+// }
+
 func (c *fsmCreator) newCheckPinFSM(chatID int64) *fsm.FSM {
 	const (
 		pinWaitingState    = "pin_waiting"

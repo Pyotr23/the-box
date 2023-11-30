@@ -28,6 +28,7 @@ const (
 	Bluetooth_GetDevicesFullInfo_FullMethodName = "/Bluetooth/GetDevicesFullInfo"
 	Bluetooth_GetTemperature_FullMethodName     = "/Bluetooth/GetTemperature"
 	Bluetooth_CheckPin_FullMethodName           = "/Bluetooth/CheckPin"
+	Bluetooth_PinLevel_FullMethodName           = "/Bluetooth/PinLevel"
 )
 
 // BluetoothClient is the client API for Bluetooth service.
@@ -42,6 +43,7 @@ type BluetoothClient interface {
 	GetDevicesFullInfo(ctx context.Context, in *GetDevicesFullInfoRequest, opts ...grpc.CallOption) (*GetDevicesFullInfoResponse, error)
 	GetTemperature(ctx context.Context, in *GetTemperatureRequest, opts ...grpc.CallOption) (*GetTemperatureResponse, error)
 	CheckPin(ctx context.Context, in *CheckPinRequest, opts ...grpc.CallOption) (*CheckPinResponse, error)
+	PinLevel(ctx context.Context, in *PinLevelRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type bluetoothClient struct {
@@ -124,6 +126,15 @@ func (c *bluetoothClient) CheckPin(ctx context.Context, in *CheckPinRequest, opt
 	return out, nil
 }
 
+func (c *bluetoothClient) PinLevel(ctx context.Context, in *PinLevelRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, Bluetooth_PinLevel_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BluetoothServer is the server API for Bluetooth service.
 // All implementations must embed UnimplementedBluetoothServer
 // for forward compatibility
@@ -136,6 +147,7 @@ type BluetoothServer interface {
 	GetDevicesFullInfo(context.Context, *GetDevicesFullInfoRequest) (*GetDevicesFullInfoResponse, error)
 	GetTemperature(context.Context, *GetTemperatureRequest) (*GetTemperatureResponse, error)
 	CheckPin(context.Context, *CheckPinRequest) (*CheckPinResponse, error)
+	PinLevel(context.Context, *PinLevelRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedBluetoothServer()
 }
 
@@ -166,6 +178,9 @@ func (UnimplementedBluetoothServer) GetTemperature(context.Context, *GetTemperat
 }
 func (UnimplementedBluetoothServer) CheckPin(context.Context, *CheckPinRequest) (*CheckPinResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPin not implemented")
+}
+func (UnimplementedBluetoothServer) PinLevel(context.Context, *PinLevelRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PinLevel not implemented")
 }
 func (UnimplementedBluetoothServer) mustEmbedUnimplementedBluetoothServer() {}
 
@@ -324,6 +339,24 @@ func _Bluetooth_CheckPin_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Bluetooth_PinLevel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PinLevelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BluetoothServer).PinLevel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bluetooth_PinLevel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BluetoothServer).PinLevel(ctx, req.(*PinLevelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Bluetooth_ServiceDesc is the grpc.ServiceDesc for Bluetooth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -362,6 +395,10 @@ var Bluetooth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckPin",
 			Handler:    _Bluetooth_CheckPin_Handler,
+		},
+		{
+			MethodName: "PinLevel",
+			Handler:    _Bluetooth_PinLevel_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

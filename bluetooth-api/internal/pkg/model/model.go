@@ -16,3 +16,9 @@ type DeviceInfo struct {
 	UpdatedAt  time.Time
 	ActivePin  int
 }
+
+type SetPinData struct {
+	MacAddress   string
+	PinNumber    int
+	SetHighLevel bool
+}
