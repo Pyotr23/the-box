@@ -27,11 +27,20 @@ const int WAITING_TIMEOUT_MS = 4500;
 int usedPin;
 void setup() {
   Serial.begin(9600);
-  
-  pinMode(LED, OUTPUT);
-  
-  digitalWrite(LED, HIGH);
-  
+
+  for (int i = 0; i <= MAX_PIN; i++) {   
+    bool isUsed = false;
+    for (int j = 0; j < (sizeof(busyPins) / sizeof(busyPins[0])); j++) {   
+      if (busyPins[j] == i) {  
+        isUsed = true;    
+        break;
+      }
+    }  
+    if (!isUsed) {
+      pinMode(i, OUTPUT);
+    }    
+  }  
+    
   dht.begin();
 }
 

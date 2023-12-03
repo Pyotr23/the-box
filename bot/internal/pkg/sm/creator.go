@@ -273,7 +273,7 @@ func (c *fsmCreator) newSetPinLevelFSM(chatID int64) *fsm.FSM {
 					err = fmt.Errorf("get pin number from metadata: %w", err)
 					return
 				}
-				log.Print("pin level", userChoice)
+
 				if err = c.service.SetPinLevel(ctx, deviceID, pinNumber, userChoice == highLevel); err != nil {
 					err = fmt.Errorf("set pin level: %w", err)
 				}
