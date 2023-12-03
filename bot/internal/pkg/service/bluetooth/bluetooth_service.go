@@ -25,6 +25,7 @@ type client interface {
 	GetDevicesFullInfo(ctx context.Context, ids []int) ([]model.DeviceInfo, error)
 	GetTemperature(ctx context.Context, id int) (string, error)
 	CheckPin(ctx context.Context, deviceID, pin int) (bool, error)
+	SetPinLevel(ctx context.Context, deviceID, pinNumber int, high bool) error
 }
 
 type Service struct {
@@ -35,6 +36,10 @@ func NewService(c client) *Service {
 	return &Service{
 		c: c,
 	}
+}
+
+func (s *Service) SetPinLevel(ctx context.Context, deviceID, pinNumber int, high bool) error {
+	return s.c.SetPinLevel(ctx, deviceID, pinNumber, high)
 }
 
 func (s *Service) CheckPin(ctx context.Context, deviceID, pin int) (bool, error) {

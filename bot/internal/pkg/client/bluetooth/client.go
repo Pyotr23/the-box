@@ -53,6 +53,23 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
+func (c *Client) SetPinLevel(ctx context.Context, deviceID, pinNumber int, high bool) error {
+	ctx, cancel := context.WithTimeout(ctx, longDefaultDuraion)
+	defer cancel()
+
+	req := &b.PinLevelRequest{
+		DeviceId:  int32(deviceID),
+		PinNumber: int32(pinNumber),
+		High:      high,
+	}
+	_, err := c.api.PinLevel(ctx, req)
+	if err != nil {
+		return fmt.Errorf("api call: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) DevicesList(ctx context.Context, deviceNames []string) ([]model.Device, error) {
 	ctx, cancel := context.WithTimeout(ctx, longDefaultDuraion)
 	defer cancel()

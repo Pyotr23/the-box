@@ -55,7 +55,7 @@ func (s *Service) SetPinLevel(_ context.Context, data model.SetPinData) error {
 
 	var code = enum.PinOffCode
 	if data.SetHighLevel {
-		code = enum.PinOffCode
+		code = enum.PinOnCode
 	}
 
 	if err := skt.SendInt(code, data.PinNumber); err != nil {
