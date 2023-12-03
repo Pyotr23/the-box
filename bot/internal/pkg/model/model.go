@@ -22,3 +22,8 @@ type Info struct {
 	ChatID       int64
 	OutputTextCh chan TextChatID
 }
+
+type JobSettingsChatID struct {
+	ChatID      int64
+	JobSettings JobSettings
+}
