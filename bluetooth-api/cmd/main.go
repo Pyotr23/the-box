@@ -28,7 +28,7 @@ func main() {
 
 	select {
 	case err := <-errCh:
-		log.Printf("http serve: %s\n", err.Error())
+		log.Printf("http serve: %s\n", err)
 	case <-shutdownCh:
 		log.Println("shutdown signal")
 	}

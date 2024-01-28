@@ -43,7 +43,7 @@ func InsertJob(ctx context.Context, data model.JobSettingsChatID) error {
 	}
 
 	const q = `
-		insert into device(chat_id, settings_json)
+		insert into job(chat_id, settings_json)
 		values (?, ?)`
 
 	return exec(ctx, q, data.ChatID, string(bytesSettings))

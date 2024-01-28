@@ -36,7 +36,7 @@ func (nt *ngrokTunnel) Init(ctx context.Context, app any) error {
 	}
 
 	var err error
-	nt.tunnel, err = ngrok.Listen(context.Background(),
+	nt.tunnel, err = ngrok.Listen(ctx,
 		config.HTTPEndpoint(),
 		ngrok.WithAuthtokenFromEnv(),
 	)
