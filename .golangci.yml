@@ -1,0 +1,12 @@
+version: "2"
+
+linters:
+  enable:
+    - revive
+  exclusions:
+    rules:
+      - linters:
+          - revive
+        # Updated regex to match the exact output of v2 linters
+        text: "^(package-comments|exported):"
+

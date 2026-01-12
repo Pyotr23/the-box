@@ -21,3 +21,9 @@ main
 
 *.ini
 *.db
+
+# file with secrets
+secret.yaml
+
+# for debug
+.nvim.lua

@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"log/slog"
+
+	"github.com/Pyotr23/the-box/internal/app"
+)
 
 func main() {
-	fmt.Println("Russia")
+	if err := app.Run(); err != nil {
+		slog.Error(err.Error())
+	}
 }
