@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/Pyotr23/the-box/configs"
+	"github.com/Pyotr23/the-box/internal/models"
 	"github.com/go-telegram/bot"
-	"github.com/go-telegram/bot/models"
+	bm "github.com/go-telegram/bot/models"
 )
 
 const workersCount = 1
@@ -31,6 +32,7 @@ func Run() error {
 		bot.WithCheckInitTimeout(botInitTimeout),
 		bot.WithWorkers(workersCount),
 		bot.WithNotAsyncHandlers(),
+		bot.WithErrorsHandler(models.ProcessBotError),
 	}
 
 	b, err := bot.New(appConf.GetBotToken(), opts...)
@@ -47,7 +49,7 @@ func Run() error {
 	return nil
 }
 
-func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
+func handler(ctx context.Context, b *bot.Bot, update *bm.Update) {
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   update.Message.Text,
